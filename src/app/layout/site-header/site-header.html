@@ -1,0 +1,80 @@
+<header class="header" [class.header--open]="menuOpen()">
+  <div class="container header__inner">
+    <a class="brand" routerLink="/" fragment="top" (click)="closeMenu()">
+      <span class="brand__mark" aria-hidden="true">IO</span>
+      <span class="brand__text">
+        Iryna Ocheretko
+        <small>Full-Stack Developer</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul class="nav__list">
+        @for (item of sections; track item.fragment) {
+          <li>
+            <a class="nav__link" routerLink="/" [fragment]="item.fragment" (click)="closeMenu()">
+              {{ item.label }}
+            </a>
+          </li>
+        }
+        @for (item of routeItems; track item.route) {
+          <li>
+            <a class="nav__link nav__link--route" [routerLink]="item.route" (click)="closeMenu()">
+              <i [class]="item.icon" aria-hidden="true"></i> {{ item.label }}
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="header__actions">
+      <button
+        type="button"
+        class="cmdk-btn"
+        (click)="palette.open()"
+        aria-label="Open command palette"
+      >
+        <i class="pi pi-search" aria-hidden="true"></i>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn"
+        [attr.aria-label]="theme.nextLabel()"
+        [attr.aria-pressed]="theme.isDark()"
+        (click)="theme.toggle()"
+      >
+        <i class="pi" [class.pi-moon]="theme.isDark()" [class.pi-sun]="!theme.isDark()"></i>
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn menu-toggle"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="mobile-nav"
+        aria-label="Toggle navigation menu"
+        (click)="toggleMenu()"
+      >
+        <i class="pi" [class.pi-bars]="!menuOpen()" [class.pi-times]="menuOpen()"></i>
+      </button>
+    </div>
+  </div>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Primary">
+    <ul>
+      @for (item of sections; track item.fragment) {
+        <li>
+          <a routerLink="/" [fragment]="item.fragment" (click)="closeMenu()">{{ item.label }}</a>
+        </li>
+      }
+      @for (item of routeItems; track item.route) {
+        <li>
+          <a [routerLink]="item.route" (click)="closeMenu()">
+            <i [class]="item.icon" aria-hidden="true"></i> {{ item.label }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+</header>

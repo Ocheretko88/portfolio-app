@@ -105,6 +105,47 @@
   display: none;
 }
 
+.nav__link--route {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--system);
+}
+.nav__link--route:hover {
+  color: var(--system);
+  background: color-mix(in srgb, var(--system) 12%, transparent);
+}
+
+.cmdk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2.4rem;
+  padding: 0 0.6rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    border-color var(--transition);
+}
+.cmdk-btn:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.cmdk-btn kbd {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+@media (max-width: 980px) {
+  .cmdk-btn kbd {
+    display: none;
+  }
+}
+
 .mobile-nav {
   display: none;
 }

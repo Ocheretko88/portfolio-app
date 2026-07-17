@@ -1,0 +1,297 @@
+openapi: 3.1.0
+info:
+  title: Portfolio API
+  version: v1
+  description: >
+    Public API powering iryna-ocheretko's portfolio front end. This document is
+    the single source of truth for the API↔App contract; the Angular app's
+    TypeScript types are generated from it (see docs/CONTRACTS.md).
+  license:
+    name: MIT
+servers:
+  - url: https://portfolio-api-ldu9.onrender.com
+    description: Production (Render)
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /up:
+    get:
+      operationId: healthCheck
+      summary: Liveness health check
+      tags: [system]
+      responses:
+        '200':
+          description: Service is up
+
+  /api/v1/resume:
+    get:
+      operationId: getResume
+      summary: Full CV payload
+      tags: [resume]
+      responses:
+        '200':
+          description: The resume
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/Resume' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /api/v1/xray/trace:
+    get:
+      operationId: getXrayTrace
+      summary: Real request-lifecycle trace
+      tags: [xray]
+      responses:
+        '200':
+          description: Timed stages of processing a request
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/Trace' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /api/v1/security-lab/sql-injection:
+    post:
+      operationId: demoSqlInjection
+      summary: Simulated SQL-injection demonstration (nothing is executed)
+      tags: [security-lab]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DemoInput' }
+      responses:
+        '200':
+          description: Vulnerable vs hardened comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/SqlInjectionResult' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /api/v1/security-lab/xss:
+    post:
+      operationId: demoXss
+      summary: Simulated reflected-XSS demonstration (nothing is executed)
+      tags: [security-lab]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DemoInput' }
+      responses:
+        '200':
+          description: Vulnerable vs hardened comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/XssResult' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+components:
+  responses:
+    Error:
+      description: Error envelope
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: { $ref: '#/components/schemas/ApiError' }
+
+  schemas:
+    Meta:
+      type: object
+      required: [version, generatedAt]
+      properties:
+        version: { type: string, example: v1 }
+        generatedAt: { type: string, format: date-time }
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: ValidationException }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+
+    DemoInput:
+      type: object
+      required: [input]
+      properties:
+        input: { type: string, maxLength: 500 }
+
+    SocialLink:
+      type: object
+      required: [label, href]
+      properties:
+        label: { type: string }
+        href: { type: string }
+        handle: { type: string }
+        icon: { type: string }
+
+    Stat:
+      type: object
+      required: [value, label]
+      properties:
+        value: { type: string }
+        label: { type: string }
+
+    SkillGroup:
+      type: object
+      required: [name, items]
+      properties:
+        name: { type: string }
+        items:
+          type: array
+          items: { type: string }
+
+    ExperienceRole:
+      type: object
+      required: [company, title, period, highlights, stack]
+      properties:
+        company: { type: string }
+        title: { type: string }
+        period: { type: string }
+        track: { type: string }
+        highlights:
+          type: array
+          items: { type: string }
+        stack:
+          type: array
+          items: { type: string }
+
+    EducationEntry:
+      type: object
+      required: [institution, qualification]
+      properties:
+        institution: { type: string }
+        qualification: { type: string }
+        period: { type: string }
+
+    Certification:
+      type: object
+      required: [name, issuer, issued]
+      properties:
+        name: { type: string }
+        issuer: { type: string }
+        issued: { type: string }
+        credentialUrl: { type: string }
+
+    Profile:
+      type: object
+      required: [name, title, location, summary, email, links]
+      properties:
+        name: { type: string }
+        title: { type: string }
+        location: { type: string }
+        summary: { type: string }
+        email: { type: string }
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/SocialLink' }
+
+    Resume:
+      type: object
+      required: [profile, stats, skillGroups, experience, education, certifications]
+      properties:
+        profile: { $ref: '#/components/schemas/Profile' }
+        stats:
+          type: array
+          items: { $ref: '#/components/schemas/Stat' }
+        skillGroups:
+          type: array
+          items: { $ref: '#/components/schemas/SkillGroup' }
+        experience:
+          type: array
+          items: { $ref: '#/components/schemas/ExperienceRole' }
+        education:
+          type: array
+          items: { $ref: '#/components/schemas/EducationEntry' }
+        certifications:
+          type: array
+          items: { $ref: '#/components/schemas/Certification' }
+
+    TraceStage:
+      type: object
+      required: [key, label, durationMs]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        durationMs: { type: number }
+
+    Trace:
+      type: object
+      required: [stages, totalMs, payloadBytes]
+      properties:
+        stages:
+          type: array
+          items: { $ref: '#/components/schemas/TraceStage' }
+        totalMs: { type: number }
+        payloadBytes: { type: integer }
+
+    SqlInjectionSide:
+      type: object
+      required: [query, explanation, breached]
+      properties:
+        query: { type: string }
+        explanation: { type: string }
+        breached: { type: boolean }
+        simulatedRows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    SqlInjectionResult:
+      type: object
+      required: [input, vulnerable, hardened]
+      properties:
+        input: { type: string }
+        vulnerable: { $ref: '#/components/schemas/SqlInjectionSide' }
+        hardened: { $ref: '#/components/schemas/SqlInjectionSide' }
+
+    XssSide:
+      type: object
+      required: [rendered, explanation, executed]
+      properties:
+        rendered: { type: string }
+        explanation: { type: string }
+        executed: { type: boolean }
+        csp: { type: string }
+
+    XssResult:
+      type: object
+      required: [input, vulnerable, hardened]
+      properties:
+        input: { type: string }
+        vulnerable: { $ref: '#/components/schemas/XssSide' }
+        hardened: { $ref: '#/components/schemas/XssSide' }

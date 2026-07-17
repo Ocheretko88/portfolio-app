@@ -1,9 +1,11 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal, type Signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
+import { ResumeApi } from '../api/resume-api';
 import { RESUME } from '../data/resume.data';
 import type { Resume, SocialLink } from '../models/resume.models';
-import { environment } from '../../../environments/environment';
+
+/** Where the currently-displayed resume came from. */
+export type ResumeSource = 'bundled' | 'live';
 
 /** Best-effort primeicons class for a link when the API omits one. */
 function iconForLabel(label: string): string {
@@ -24,34 +26,22 @@ function normalizeLink(link: SocialLink): SocialLink {
   };
 }
 
-/** Where the currently-displayed resume came from. */
-export type ResumeSource = 'bundled' | 'live';
-
-interface ResumeApiResponse {
-  readonly data: Resume;
-  readonly meta: { readonly version: string; readonly generatedAt: string };
-}
-
 /**
  * Serves resume content to the UI as read-only signals.
  *
  * The bundled snapshot (`RESUME`) is the initial value, so the site renders
- * instantly and stays fully functional even while the free-tier API is cold or
- * unreachable. In the background we fetch the live payload from the Laravel API
- * and, only if it validates, swap it in. Components never change — they read
- * the same `data` signal throughout.
+ * instantly and stays functional even while the free-tier API is cold. In the
+ * background we fetch the live payload via the typed API client and, only if it
+ * validates, swap it in. Components read the same `data` signal throughout.
  */
 @Injectable({ providedIn: 'root' })
 export class ResumeService {
-  private readonly http = inject(HttpClient);
+  private readonly resumeApi = inject(ResumeApi);
 
   private readonly resume = signal<Resume>(RESUME);
   private readonly sourceSig = signal<ResumeSource>('bundled');
 
-  /** The resume to render. Starts as the bundled snapshot, upgrades to live. */
   readonly data: Signal<Resume> = this.resume.asReadonly();
-
-  /** Whether `data` is currently the bundled snapshot or the live API payload. */
   readonly source: Signal<ResumeSource> = this.sourceSig.asReadonly();
 
   constructor() {
@@ -59,11 +49,11 @@ export class ResumeService {
   }
 
   private loadLive(): void {
-    this.http
-      .get<ResumeApiResponse>(`${environment.apiUrl}/api/v1/resume`)
+    this.resumeApi
+      .get()
       .pipe(catchError(() => of(null)))
-      .subscribe((response) => {
-        const live = response ? this.parse(response.data) : null;
+      .subscribe((dto) => {
+        const live = dto ? this.parse(dto) : null;
         if (live) {
           this.resume.set(live);
           this.sourceSig.set('live');
@@ -92,8 +82,6 @@ export class ResumeService {
     }
 
     const resume = candidate as Resume;
-    // Normalize links so display text and icons are always present, even if the
-    // API returns only label + href.
     return {
       ...resume,
       profile: {

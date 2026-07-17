@@ -1,0 +1,124 @@
+<section class="section container lab">
+  <a class="back" routerLink="/" fragment="top">
+    <i class="pi pi-arrow-left" aria-hidden="true"></i> Back to portfolio
+  </a>
+
+  <p class="eyebrow">Security lab</p>
+  <h1 class="section-title">Two ways to write the same feature</h1>
+  <p class="lead text-muted">
+    Send a payload and see the difference between unsafe and hardened code, side by side. This lab
+    is <strong>simulated</strong>: the server never runs a query or renders your input — it returns
+    the two code paths and a deterministic result as data. Safe by construction.
+  </p>
+
+  @if (store.error()) {
+    <p class="banner" role="status">{{ store.error() }}</p>
+  }
+
+  <!-- SQL injection -->
+  <article class="demo">
+    <h2 class="demo__title"><span class="tag">SQL</span> Injection</h2>
+    <div class="field">
+      <label for="sql">Value submitted as an email lookup</label>
+      <div class="field__row">
+        <input
+          id="sql"
+          type="text"
+          [value]="sqlInput()"
+          (input)="onSql($event)"
+          spellcheck="false"
+        />
+        <button
+          type="button"
+          class="btn"
+          (click)="store.runSql(sqlInput())"
+          [disabled]="store.pending() === 'sql'"
+        >
+          {{ store.pending() === 'sql' ? 'Running…' : 'Run' }}
+        </button>
+      </div>
+    </div>
+
+    @if (store.sql(); as r) {
+      <div class="grid">
+        <div class="panel" [class.panel--breached]="r.vulnerable.breached">
+          <p class="panel__head">
+            <i class="pi pi-times-circle" aria-hidden="true"></i> Vulnerable — string concatenation
+          </p>
+          <pre class="code"><code>{{ r.vulnerable.query }}</code></pre>
+          <p class="panel__note">{{ r.vulnerable.explanation }}</p>
+          @if (r.vulnerable.breached) {
+            <p class="verdict verdict--bad">Injection succeeded — leaked rows:</p>
+            <pre class="code code--rows"><code>{{ r.vulnerable.simulatedRows | json }}</code></pre>
+          } @else {
+            <p class="verdict">No injection detected for this input.</p>
+          }
+        </div>
+
+        <div class="panel panel--safe">
+          <p class="panel__head">
+            <i class="pi pi-check-circle" aria-hidden="true"></i> Hardened — bound parameter
+          </p>
+          <pre class="code"><code>{{ r.hardened.query }}</code></pre>
+          <p class="panel__note">{{ r.hardened.explanation }}</p>
+          <p class="verdict verdict--good">
+            Query logic cannot change — the value is data, not code.
+          </p>
+        </div>
+      </div>
+    }
+  </article>
+
+  <!-- XSS -->
+  <article class="demo">
+    <h2 class="demo__title"><span class="tag">XSS</span> Reflected</h2>
+    <div class="field">
+      <label for="xss">Value echoed back into a comment</label>
+      <div class="field__row">
+        <input
+          id="xss"
+          type="text"
+          [value]="xssInput()"
+          (input)="onXss($event)"
+          spellcheck="false"
+        />
+        <button
+          type="button"
+          class="btn"
+          (click)="store.runXss(xssInput())"
+          [disabled]="store.pending() === 'xss'"
+        >
+          {{ store.pending() === 'xss' ? 'Running…' : 'Run' }}
+        </button>
+      </div>
+    </div>
+
+    @if (store.xss(); as r) {
+      <div class="grid">
+        <div class="panel" [class.panel--breached]="r.vulnerable.executed">
+          <p class="panel__head">
+            <i class="pi pi-times-circle" aria-hidden="true"></i> Vulnerable — raw interpolation
+          </p>
+          <pre class="code"><code>{{ r.vulnerable.rendered }}</code></pre>
+          <p class="panel__note">{{ r.vulnerable.explanation }}</p>
+          <p class="verdict" [class.verdict--bad]="r.vulnerable.executed">
+            {{
+              r.vulnerable.executed
+                ? 'This markup would execute in the browser.'
+                : 'Inert for this input.'
+            }}
+          </p>
+        </div>
+
+        <div class="panel panel--safe">
+          <p class="panel__head">
+            <i class="pi pi-check-circle" aria-hidden="true"></i> Hardened — HTML-escaped
+          </p>
+          <pre class="code"><code>{{ r.hardened.rendered }}</code></pre>
+          <p class="panel__note">{{ r.hardened.explanation }}</p>
+          <p class="verdict verdict--good">Rendered as inert text. CSP: {{ r.hardened.csp }}</p>
+        </div>
+      </div>
+    }
+  </article>
+</section>

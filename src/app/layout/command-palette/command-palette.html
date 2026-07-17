@@ -1,0 +1,45 @@
+@if (svc.isOpen()) {
+  <div
+    class="cmdk"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Command palette"
+    (click)="svc.close()"
+  >
+    <div class="cmdk__panel" (click)="$event.stopPropagation()">
+      <div class="cmdk__search">
+        <i class="pi pi-search" aria-hidden="true"></i>
+        <input
+          #search
+          type="text"
+          placeholder="Type a command or search…"
+          [value]="query()"
+          (input)="onQuery($event)"
+          aria-label="Search commands"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <kbd>esc</kbd>
+      </div>
+
+      <ul class="cmdk__list" role="listbox" aria-label="Commands">
+        @for (cmd of filtered(); track cmd.id; let i = $index) {
+          <li
+            role="option"
+            class="cmdk__item"
+            [class.is-selected]="i === selected()"
+            [attr.aria-selected]="i === selected()"
+            (click)="run(cmd)"
+            (mouseenter)="selected.set(i)"
+          >
+            <i [class]="cmd.icon" aria-hidden="true"></i>
+            <span class="cmdk__label">{{ cmd.label }}</span>
+            <span class="cmdk__hint text-mono">{{ cmd.hint }}</span>
+          </li>
+        } @empty {
+          <li class="cmdk__empty">No commands match “{{ query() }}”.</li>
+        }
+      </ul>
+    </div>
+  </div>
+}

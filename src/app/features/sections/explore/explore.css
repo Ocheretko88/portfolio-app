@@ -1,0 +1,51 @@
+.explore {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-s);
+}
+
+.explore__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--space-l);
+  color: var(--text);
+}
+.explore__card:hover {
+  border-color: var(--brand);
+  transform: translateY(-3px);
+}
+.explore__card h3 {
+  font-size: var(--step-2);
+}
+
+.explore__icon {
+  font-size: 1.6rem;
+  color: var(--system);
+  margin-bottom: 0.3rem;
+}
+.explore__icon--red {
+  color: var(--danger);
+}
+
+.explore__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: var(--space-s);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.explore__hint {
+  margin-top: var(--space-m);
+  font-size: var(--step--1);
+}
+
+@media (max-width: 720px) {
+  .explore {
+    grid-template-columns: 1fr;
+  }
+}

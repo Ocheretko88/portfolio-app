@@ -1,14 +1,14 @@
 # Portfolio — Frontend (`portfolio-app`)
 
 The Angular front end of my developer portfolio. A single-page, data-driven site
-that presents my CV and, incrementally, a set of interactive demos that show how
-a full-stack request actually flows through the machine.
+that presents my CV plus interactive demos that show how a full-stack request
+actually flows through the machine.
 
 **Stack:** Angular 21 · standalone components · Signals · NgRx SignalStore ·
 PrimeNG · a hand-built design system · Vitest.
 
-> Companion repository: [`portfolio-api`](../portfolio-api) — the Laravel 13 / PHP 8.3
-> backend (Sanctum auth, PostgreSQL) that will power the live demos.
+> Companion repository: [`portfolio-api`](../portfolio-api) — the Laravel 13 /
+> PHP 8.5 backend that powers the live data and demos.
 
 ---
 
@@ -19,6 +19,8 @@ npm install
 npm start            # dev server on http://localhost:4200
 npm run build        # production build -> dist/portfolio-app/browser
 npm test             # unit tests (Vitest)
+npm run typecheck    # strict template + type check (ngc, no emit)
+npm run api:types    # regenerate API types from the OpenAPI spec
 ```
 
 Requires Node 22+.
@@ -27,85 +29,50 @@ Requires Node 22+.
 
 ## Architecture at a glance
 
-The app is deliberately small but structured the way a larger application would
-be, so the conventions scale.
-
 ```
 src/app/
-├─ core/                     # cross-cutting, no UI
-│  ├─ models/                # typed domain contracts (Resume, ExperienceRole…)
-│  ├─ data/                  # single source of truth for CV content
-│  ├─ services/              # ResumeService — exposes content as signals
-│  └─ state/                 # ThemeStore — NgRx SignalStore
-├─ layout/                   # site chrome (header, footer)
+├─ core/
+│  ├─ api/                   # typed API client layer + generated contract types
+│  ├─ models/                # view models (Resume, ExperienceRole…)
+│  ├─ data/                  # bundled CV snapshot (instant render + fallback)
+│  ├─ services/              # ResumeService (signal + live fetch + fallback)
+│  └─ state/                 # ThemeStore, CommandPaletteService
+├─ layout/                   # header, footer, ⌘K command palette
 └─ features/
-   ├─ home/                  # the landing page, composes the sections
-   └─ sections/              # hero, profile, skills, experience, education, contact
+   ├─ home/                  # landing page (composes the sections)
+   ├─ sections/              # hero, profile, skills, experience, education, explore, contact
+   ├─ xray/                  # X-Ray request visualiser (+ SignalStore)
+   └─ security-lab/          # simulated SQL-injection / XSS lab (+ SignalStore)
 ```
 
-Guiding principles, each enforced in the code:
-
-- **Data-driven UI.** Every section renders from typed structures in
-  `core/data`, never from hard-coded markup. Swapping the static constant for an
-  HTTP call to `GET /api/v1/resume` later touches one service, not the templates.
-- **Signals everywhere.** State is signals; derived values are `computed`;
-  components are `OnPush`. No `NgModule`s, no `*ngIf`/`*ngFor` — native control
-  flow (`@if`, `@for`) only.
-- **Standalone + lazy.** The landing page is a lazily-loaded route, keeping the
-  pattern ready for the game / security-lab routes to come.
-- **Accessibility is a requirement, not a polish pass.** Semantic landmarks, a
-  skip link, visible focus rings, `prefers-reduced-motion` support, and a colour
-  system checked for WCAG AA contrast. See `AGENTS.md` for the full ruleset the
-  code is held to.
-
-A fuller write-up, including the request-lifecycle diagram, lives in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Notable decisions and their
-trade-offs are recorded as ADRs in [`docs/adr/`](docs/adr).
+Principles enforced in the code: data-driven UI, signals everywhere (`computed`,
+`OnPush`, native control flow), one HTTP seam (`core/api/api-client.ts`) with a
+service per domain (SRP), lazy feature routes, and accessibility as a
+requirement (skip link, focus management, WCAG AA contrast). See `AGENTS.md`.
 
 ---
 
-## Design system
+## API contract & codegen
 
-Rather than shipping a stock theme, the palette is a bespoke token system where
-each colour has a semantic job:
+The API's [`openapi.yaml`](src/app/core/api/openapi.yaml) is the single source of
+truth; the TypeScript types in `src/app/core/api/generated/contract.ts` are
+**generated** from it, so the client can't silently drift from the server.
 
-| Colour            | Role      | Meaning                                  |
-| ----------------- | --------- | ---------------------------------------- |
-| Blue-black ink    | canvas    | backgrounds — never pure black           |
-| Burnt sienna / amber | brand   | me; primary actions and highlights       |
-| Slate / electric blue | system | the stack; focus states and data flow    |
-| Oxblood / signal red | danger  | reserved for the security demos          |
-
-Tokens are CSS custom properties in `src/styles.css`, flipped between light and
-dark by a `data-theme` attribute the `ThemeStore` writes to `<html>`.
-
----
-
-## Verification
-
-Local checks that gate every change:
-
-```bash
-npm run build                          # AOT build + bundle
-npx ngc -p tsconfig.app.json --noEmit  # strict template type-check
-npm test                               # unit tests
-npx prettier --check "src/**/*"        # formatting
-```
-
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same checks
-on every push and pull request.
+When the contract changes: copy the updated spec from
+`portfolio-api/docs/openapi.yaml` into `src/app/core/api/openapi.yaml`, run
+`npm run api:types`, and fix any type errors that surface. Full details in the
+API repo's `docs/CONTRACTS.md`.
 
 ---
 
 ## Roadmap
 
-- [x] CV / resume site — data-driven, accessible, deployed
-- [ ] `GET /api/v1/resume` served by the Laravel API
-- [ ] **Under-the-hood X-Ray** — animate a real request through the full
-      Angular → Laravel → PostgreSQL pipeline
-- [ ] **Security lab** — a sandboxed XSS / SQL-injection demo paired with its
-      hardened counterpart
-- [ ] Command palette (⌘K) navigation
+- [x] CV / resume site — data-driven, accessible, deployed (Vercel)
+- [x] `GET /api/v1/resume` served by the Laravel API, consumed with a fallback
+- [x] Typed API client + OpenAPI-generated contract
+- [x] **Under-the-hood X-Ray** — animates a real, server-timed request lifecycle
+- [x] **Security Lab** — simulated XSS / SQL-injection: vulnerable vs. hardened
+- [x] Command palette (⌘K) navigation
 
 ## License
 

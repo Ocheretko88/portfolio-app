@@ -4,6 +4,7 @@ import { Profile } from '../sections/profile/profile';
 import { Skills } from '../sections/skills/skills';
 import { Experience } from '../sections/experience/experience';
 import { Education } from '../sections/education/education';
+import { Explore } from '../sections/explore/explore';
 import { Contact } from '../sections/contact/contact';
 
 /**
@@ -14,13 +15,14 @@ import { Contact } from '../sections/contact/contact';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Hero, Profile, Skills, Experience, Education, Contact],
+  imports: [Hero, Profile, Skills, Experience, Education, Explore, Contact],
   template: `
     <app-hero />
     <app-profile />
     <app-skills />
     <app-experience />
     <app-education />
+    <app-explore />
     <app-contact />
   `,
 })
