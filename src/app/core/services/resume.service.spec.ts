@@ -45,6 +45,23 @@ describe('ResumeService', () => {
     expect(service.data().profile.name).toBe('Live Iryna');
   });
 
+  it('normalizes minimal API links, filling icon and handle', () => {
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/resume'));
+    // A link with only label + href (what a bare API might return).
+    const minimal = {
+      ...RESUME,
+      profile: {
+        ...RESUME.profile,
+        links: [{ label: 'GitHub', href: 'https://github.com/x' }],
+      },
+    } as unknown;
+    req.flush({ data: minimal, meta: { version: 'v1', generatedAt: 'x' } });
+
+    const link = service.data().profile.links[0];
+    expect(link.icon).toContain('pi-github');
+    expect(link.handle).toBe('GitHub');
+  });
+
   it('keeps the bundled snapshot when the API errors', () => {
     httpMock
       .expectOne((r) => r.url.endsWith('/api/v1/resume'))

@@ -2,8 +2,27 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal, type Signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { RESUME } from '../data/resume.data';
-import type { Resume } from '../models/resume.models';
+import type { Resume, SocialLink } from '../models/resume.models';
 import { environment } from '../../../environments/environment';
+
+/** Best-effort primeicons class for a link when the API omits one. */
+function iconForLabel(label: string): string {
+  const key = label.toLowerCase();
+  if (key.includes('github')) return 'pi pi-github';
+  if (key.includes('linkedin')) return 'pi pi-linkedin';
+  if (key.includes('telegram')) return 'pi pi-telegram';
+  if (key.includes('mail')) return 'pi pi-envelope';
+  return 'pi pi-link';
+}
+
+/** Guarantee every link has a display handle and an icon, whatever the source. */
+function normalizeLink(link: SocialLink): SocialLink {
+  return {
+    ...link,
+    handle: link.handle || link.label,
+    icon: link.icon || iconForLabel(link.label),
+  };
+}
 
 /** Where the currently-displayed resume came from. */
 export type ResumeSource = 'bundled' | 'live';
@@ -61,12 +80,26 @@ export class ResumeService {
     const candidate = raw as Partial<Resume>;
     const looksValid =
       !!candidate.profile?.name &&
+      Array.isArray(candidate.profile?.links) &&
       Array.isArray(candidate.stats) &&
       Array.isArray(candidate.skillGroups) &&
       Array.isArray(candidate.experience) &&
       Array.isArray(candidate.education) &&
       Array.isArray(candidate.certifications);
 
-    return looksValid ? (candidate as Resume) : null;
+    if (!looksValid) {
+      return null;
+    }
+
+    const resume = candidate as Resume;
+    // Normalize links so display text and icons are always present, even if the
+    // API returns only label + href.
+    return {
+      ...resume,
+      profile: {
+        ...resume.profile,
+        links: resume.profile.links.map(normalizeLink),
+      },
+    };
   }
 }
