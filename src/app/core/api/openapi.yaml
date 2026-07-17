@@ -24,7 +24,7 @@ paths:
         '200':
           description: Service is up
 
-  /api/v1/resume:
+  /api/v1/resumes:
     get:
       operationId: getResume
       summary: Full CV payload
@@ -42,7 +42,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
         '429': { $ref: '#/components/responses/Error' }
 
-  /api/v1/xray/trace:
+  /api/v1/xray/traces:
     get:
       operationId: getXrayTrace
       summary: Real request-lifecycle trace
@@ -60,7 +60,7 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
         '429': { $ref: '#/components/responses/Error' }
 
-  /api/v1/security-lab/sql-injection:
+  /api/v1/security-lab/sql-injections:
     post:
       operationId: demoSqlInjection
       summary: Simulated SQL-injection demonstration (nothing is executed)
@@ -84,7 +84,7 @@ paths:
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
 
-  /api/v1/security-lab/xss:
+  /api/v1/security-lab/xss-attempts:
     post:
       operationId: demoXss
       summary: Simulated reflected-XSS demonstration (nothing is executed)

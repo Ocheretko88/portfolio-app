@@ -37,7 +37,7 @@ describe('ResumeService', () => {
   });
 
   it('swaps to the live payload when the API returns a valid response', () => {
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/resume'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/resumes'));
     const live = { ...RESUME, profile: { ...RESUME.profile, name: 'Live Iryna' } };
     req.flush({ data: live, meta: { version: 'v1', generatedAt: '2026-01-01T00:00:00Z' } });
 
@@ -46,7 +46,7 @@ describe('ResumeService', () => {
   });
 
   it('normalizes minimal API links, filling icon and handle', () => {
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/resume'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/resumes'));
     // A link with only label + href (what a bare API might return).
     const minimal = {
       ...RESUME,
@@ -64,7 +64,7 @@ describe('ResumeService', () => {
 
   it('keeps the bundled snapshot when the API errors', () => {
     httpMock
-      .expectOne((r) => r.url.endsWith('/api/v1/resume'))
+      .expectOne((r) => r.url.endsWith('/api/v1/resumes'))
       .flush('down', { status: 503, statusText: 'Service Unavailable' });
 
     expect(service.source()).toBe('bundled');

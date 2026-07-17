@@ -8,6 +8,6 @@ export class XRayApi {
   private readonly api = inject(ApiClient);
 
   trace(): Observable<TraceDto> {
-    return this.api.get<TraceDto>('/api/v1/xray/trace');
+    return this.api.get<TraceDto>('/api/v1/xray/traces');
   }
 }

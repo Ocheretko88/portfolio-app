@@ -8,10 +8,10 @@ export class SecurityLabApi {
   private readonly api = inject(ApiClient);
 
   sqlInjection(input: string): Observable<SqlInjectionResultDto> {
-    return this.api.post<SqlInjectionResultDto>('/api/v1/security-lab/sql-injection', { input });
+    return this.api.post<SqlInjectionResultDto>('/api/v1/security-lab/sql-injections', { input });
   }
 
   xss(input: string): Observable<XssResultDto> {
-    return this.api.post<XssResultDto>('/api/v1/security-lab/xss', { input });
+    return this.api.post<XssResultDto>('/api/v1/security-lab/xss-attempts', { input });
   }
 }

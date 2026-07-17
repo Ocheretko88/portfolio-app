@@ -8,6 +8,6 @@ export class ResumeApi {
   private readonly api = inject(ApiClient);
 
   get(): Observable<ResumeDto> {
-    return this.api.get<ResumeDto>('/api/v1/resume');
+    return this.api.get<ResumeDto>('/api/v1/resumes');
   }
 }
