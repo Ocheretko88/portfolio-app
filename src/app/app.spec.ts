@@ -1,13 +1,23 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
-  beforeEach(() =>
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([])],
-    }),
-  );
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    // ResumeService fires a resume request on init; drain it so nothing leaks.
+    httpMock.match(() => true).forEach((req) => req.flush(null));
+  });
 
   it('creates the shell', () => {
     const fixture = TestBed.createComponent(App);

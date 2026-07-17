@@ -25,6 +25,18 @@ import { ResumeService } from '../../core/services/resume.service';
       </div>
 
       <div class="container footer__meta text-mono text-muted">
+        <span
+          class="footer__source"
+          [class.footer__source--live]="isLive()"
+          [attr.title]="
+            isLive()
+              ? 'Loaded live from the Laravel API'
+              : 'Serving the bundled snapshot (API cold or unreachable)'
+          "
+        >
+          <span class="footer__source-dot" aria-hidden="true"></span>
+          {{ isLive() ? 'Resume data: live from API' : 'Resume data: bundled snapshot' }}
+        </span>
         <span>Built with Angular {{ angularVersion }} · Signals · PrimeNG</span>
         <span>© {{ year }} — designed &amp; engineered by hand</span>
       </div>
@@ -35,6 +47,7 @@ import { ResumeService } from '../../core/services/resume.service';
 export class SiteFooter {
   private readonly resume = inject(ResumeService);
   protected readonly profile = computed(() => this.resume.data().profile);
+  protected readonly isLive = computed(() => this.resume.source() === 'live');
   protected readonly year = new Date().getFullYear();
   protected readonly angularVersion = '21';
 }
