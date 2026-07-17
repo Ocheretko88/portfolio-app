@@ -1,12 +1,18 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SiteHeader } from './layout/site-header/site-header';
+import { SiteFooter } from './layout/site-footer/site-footer';
+import { ThemeStore } from './core/state/theme.store';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, SiteHeader, SiteFooter],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('portfolio-app');
+  // Injecting the store here triggers its onInit hook, applying the persisted
+  // theme to <html> before first paint of the routed content.
+  protected readonly theme = inject(ThemeStore);
 }

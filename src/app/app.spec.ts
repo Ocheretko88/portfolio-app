@@ -1,23 +1,27 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-    }).compileComponents();
+  beforeEach(() =>
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    }),
+  );
+
+  it('creates the shell', () => {
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should create the app', () => {
+  it('renders the header, footer and skip link', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
 
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, portfolio-app');
+    expect(el.querySelector('app-site-header')).toBeTruthy();
+    expect(el.querySelector('app-site-footer')).toBeTruthy();
+    expect(el.querySelector('.skip-link')?.textContent).toContain('Skip to content');
+    expect(el.textContent).toContain('Iryna Ocheretko');
   });
 });
