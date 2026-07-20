@@ -15,7 +15,9 @@ import { dirname, resolve } from 'node:path';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sh = (cmd) => {
   try {
-    return execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
   } catch {
     return '';
   }
@@ -24,7 +26,8 @@ const sh = (cmd) => {
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const version = pkg.version || '0.0.0';
 
-const fullSha = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || sh('git rev-parse HEAD');
+const fullSha =
+  process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || sh('git rev-parse HEAD');
 const commit = fullSha ? fullSha.slice(0, 7) : 'local';
 
 let repoUrl = '';

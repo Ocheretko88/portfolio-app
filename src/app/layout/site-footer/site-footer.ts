@@ -39,10 +39,7 @@ import { APP_VERSION } from '../../../environments/version';
           {{ isLive() ? 'Resume data: live from API' : 'Resume data: bundled snapshot' }}
         </span>
 
-        <span
-          class="footer__version"
-          [attr.title]="'Built ' + version.buildTime"
-        >
+        <span class="footer__version" [attr.title]="'Built ' + version.buildTime">
           @if (version.commitUrl) {
             <a [href]="version.commitUrl" rel="noopener" target="_blank">
               v{{ version.version }} · {{ version.commit }}
