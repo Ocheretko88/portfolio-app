@@ -22,8 +22,9 @@ function resolveInitialMode(doc: Document): ThemeMode {
   if (stored === 'dark' || stored === 'light') {
     return stored;
   }
-  const prefersLight = doc.defaultView?.matchMedia?.('(prefers-color-scheme: light)').matches;
-  return prefersLight ? 'light' : 'dark';
+  // Light is the design's default surface; only honour an explicit dark preference.
+  const prefersDark = doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
 }
 
 /**
@@ -36,7 +37,7 @@ function resolveInitialMode(doc: Document): ThemeMode {
  */
 export const ThemeStore = signalStore(
   { providedIn: 'root' },
-  withState<ThemeState>({ mode: 'dark' }),
+  withState<ThemeState>({ mode: 'light' }),
   withComputed(({ mode }) => ({
     isDark: computed(() => mode() === 'dark'),
     nextLabel: computed(() =>

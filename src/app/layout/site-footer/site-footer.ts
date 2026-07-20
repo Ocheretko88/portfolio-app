@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ResumeService } from '../../core/services/resume.service';
+import { APP_VERSION } from '../../../environments/version';
 
 @Component({
   selector: 'app-site-footer',
@@ -37,6 +38,21 @@ import { ResumeService } from '../../core/services/resume.service';
           <span class="footer__source-dot" aria-hidden="true"></span>
           {{ isLive() ? 'Resume data: live from API' : 'Resume data: bundled snapshot' }}
         </span>
+
+        <span
+          class="footer__version"
+          [attr.title]="'Built ' + version.buildTime"
+        >
+          @if (version.commitUrl) {
+            <a [href]="version.commitUrl" rel="noopener" target="_blank">
+              v{{ version.version }} · {{ version.commit }}
+            </a>
+          } @else {
+            v{{ version.version }} · {{ version.commit }}
+          }
+          · {{ version.buildDate }}
+        </span>
+
         <span>Built with Angular {{ angularVersion }} · Signals · PrimeNG</span>
         <span>© {{ year }} — designed &amp; engineered by hand</span>
       </div>
@@ -48,6 +64,7 @@ export class SiteFooter {
   private readonly resume = inject(ResumeService);
   protected readonly profile = computed(() => this.resume.data().profile);
   protected readonly isLive = computed(() => this.resume.source() === 'live');
+  protected readonly version = APP_VERSION;
   protected readonly year = new Date().getFullYear();
   protected readonly angularVersion = '21';
 }

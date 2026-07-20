@@ -10,13 +10,13 @@ import { ResumeService } from '../../../core/services/resume.service';
         <p class="eyebrow">Full-Stack Engineer</p>
 
         <h1 class="hero__name">
-          {{ profile().name }}
+          {{ profile().name }}<span class="hero__caret" aria-hidden="true"></span>
         </h1>
 
         <p class="hero__tagline">
           I build <span class="accent">multi-tenant web platforms</span> end to end —
-          <span class="accent-blue">Angular</span> on the front,
-          <span class="accent-blue">Python &amp; PHP</span>
+          <span class="accent-2">Angular</span> on the front,
+          <span class="accent-2">Python &amp; PHP</span>
           APIs behind them, and the data models and security that hold it all together.
         </p>
 
@@ -43,30 +43,30 @@ import { ResumeService } from '../../../core/services/resume.service';
         </ul>
       </div>
 
-      <!-- Decorative "glass mechanism" preview — a nod to the planned
-           under-the-hood request visualiser. Hidden from assistive tech. -->
-      <aside class="hero__panel" aria-hidden="true">
-        <div class="panel">
-          <div class="panel__bar">
-            <span class="dot dot--red"></span>
-            <span class="dot dot--amber"></span>
-            <span class="dot dot--blue"></span>
-            <span class="panel__title">request.lifecycle.ts</span>
+      <!-- Flat terminal panel — a plain, honest shell session, not a glossy
+           mock. No blur, no 3D tilt. Decorative; hidden from assistive tech. -->
+      <aside class="hero__term" aria-hidden="true">
+        <div class="term">
+          <div class="term__bar">
+            <span class="term__prompt-tag">iryna@stack</span>
+            <span class="term__path">~/portfolio</span>
+            <span class="term__shell">zsh</span>
           </div>
-          <pre
-            class="panel__code"
-          ><code><span class="tk-c">// a request travels the full stack</span>
-<span class="tk-k">component</span>.click()
-  <span class="tk-o">→</span> signalStore.<span class="tk-f">dispatch</span>()
-  <span class="tk-o">→</span> httpInterceptor
-  <span class="tk-o">→</span> <span class="tk-s">Laravel route</span>
-  <span class="tk-o">→</span> sanctum.<span class="tk-f">middleware</span>()
-  <span class="tk-o">→</span> controller
-  <span class="tk-o">→</span> eloquent<span class="tk-o">.</span>query
-  <span class="tk-o">→</span> <span class="tk-s">PostgreSQL</span>
-  <span class="tk-o">←</span> json
-  <span class="tk-o">←</span> signal.<span class="tk-f">set</span>()
-  <span class="tk-o">←</span> onPush.<span class="tk-f">render</span>() <span class="tk-ok">✓</span></code></pre>
+          <pre class="term__body"><code><span class="ln"><span class="pr">$</span> whoami</span>
+<span class="out">full-stack engineer · owns features across the whole stack</span>
+
+<span class="ln"><span class="pr">$</span> stack --trace ./request</span>
+<span class="out">component.click()
+  <span class="ar">→</span> signalStore.dispatch()
+  <span class="ar">→</span> httpInterceptor
+  <span class="ar">→</span> Laravel route
+  <span class="ar">→</span> sanctum.middleware()
+  <span class="ar">→</span> controller <span class="ar">→</span> eloquent.query
+  <span class="ar">→</span> PostgreSQL
+  <span class="ar">←</span> json <span class="ar">←</span> signal.set()
+  <span class="ar">←</span> onPush.render() <span class="ok">[ok]</span></span>
+
+<span class="ln"><span class="pr">$</span> <span class="cursor">_</span></span></code></pre>
         </div>
       </aside>
     </section>

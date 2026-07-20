@@ -1,8 +1,8 @@
 .footer {
-  border-top: var(--border-w) solid var(--border);
+  border-top: var(--border-w) solid var(--line);
   padding-block: var(--space-l) var(--space-m);
   margin-top: var(--space-2xl);
-  background: color-mix(in srgb, var(--surface-1) 60%, transparent);
+  background: var(--surface-1);
 }
 
 .footer__inner {
@@ -31,16 +31,18 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
+  padding: 0.45rem 0.8rem;
   color: var(--text);
   background: var(--surface-2);
   border: var(--border-w) solid var(--border);
-  border-radius: 999px;
+  border-radius: 0;
+  font-family: var(--font-mono);
   font-size: var(--step--1);
 }
 .footer__links a:hover {
   color: var(--brand);
-  border-color: var(--brand);
+  border-color: var(--line);
+  text-decoration: none;
 }
 
 .footer__meta {
@@ -59,17 +61,28 @@
   align-items: center;
   gap: 0.5rem;
 }
+/* Square status marker — flat, no glow. */
 .footer__source-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
   background: var(--text-muted);
+  border: var(--border-w) solid var(--border-strong);
   transition: background var(--transition);
 }
 .footer__source--live .footer__source-dot {
-  background: #6cc070;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #6cc070 25%, transparent);
+  background: var(--live);
+  border-color: var(--live);
 }
 .footer__source--live {
   color: var(--text);
+}
+
+.footer__version a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.footer__version a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

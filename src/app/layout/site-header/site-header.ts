@@ -34,9 +34,12 @@ export class SiteHeader {
     { label: 'Contact', fragment: 'contact' },
   ];
 
+  // Hidden from the nav for now: X-Ray and Security Lab don't yet add value for
+  // the target audience (CTOs / senior devs). The routes still exist, so these
+  // can be restored by uncommenting when the demos are ready.
   protected readonly routeItems: readonly RouteItem[] = [
-    { label: 'X-Ray', route: '/xray', icon: 'pi pi-bolt' },
-    { label: 'Security Lab', route: '/security-lab', icon: 'pi pi-shield' },
+    // { label: 'X-Ray', route: '/xray', icon: 'pi pi-bolt' },
+    // { label: 'Security Lab', route: '/security-lab', icon: 'pi pi-shield' },
   ];
 
   protected toggleMenu(): void {

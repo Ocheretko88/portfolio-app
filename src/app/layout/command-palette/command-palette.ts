@@ -39,21 +39,23 @@ export class CommandPalette {
   protected readonly query = signal('');
   protected readonly selected = signal(0);
 
+  // X-Ray and Security Lab entries are hidden for now (see site-header / home).
+  // The routes still work; uncomment these to surface them in the palette again.
   private readonly commands: readonly Command[] = [
-    {
-      id: 'xray',
-      label: 'Open X-Ray visualiser',
-      icon: 'pi pi-bolt',
-      hint: 'page',
-      run: () => this.go(['/xray']),
-    },
-    {
-      id: 'security',
-      label: 'Open Security Lab',
-      icon: 'pi pi-shield',
-      hint: 'page',
-      run: () => this.go(['/security-lab']),
-    },
+    // {
+    //   id: 'xray',
+    //   label: 'Open X-Ray visualiser',
+    //   icon: 'pi pi-bolt',
+    //   hint: 'page',
+    //   run: () => this.go(['/xray']),
+    // },
+    // {
+    //   id: 'security',
+    //   label: 'Open Security Lab',
+    //   icon: 'pi pi-shield',
+    //   hint: 'page',
+    //   run: () => this.go(['/security-lab']),
+    // },
     {
       id: 'about',
       label: 'Go to About',

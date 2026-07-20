@@ -5,9 +5,8 @@
   justify-content: space-between;
   gap: var(--space-l);
   padding: var(--space-xl);
-  background:
-    radial-gradient(600px 240px at 90% 0%, rgba(232, 134, 59, 0.12), transparent 70%),
-    color-mix(in srgb, var(--surface-1) 88%, transparent);
+  background: var(--surface-1);
+  border-color: var(--line);
 }
 
 .contact__title {
@@ -41,13 +40,19 @@
   color: var(--text);
   background: var(--surface-2);
   border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-s);
+  border-radius: 0;
   font-size: 1.1rem;
+  transition:
+    color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 .contact__links a:hover {
   color: var(--brand);
-  border-color: var(--brand);
-  transform: translateY(-2px);
+  border-color: var(--line);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-hard-sm);
 }
 
 @media (max-width: 720px) {

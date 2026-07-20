@@ -2,9 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px);
-  border-bottom: var(--border-w) solid var(--border);
+  background: var(--bg);
+  border-bottom: var(--border-w) solid var(--line);
 }
 
 .header__inner {
@@ -12,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-m);
-  height: 4.5rem;
+  height: 4.25rem;
 }
 
 .brand {
@@ -21,19 +20,22 @@
   gap: 0.7rem;
   color: var(--text-strong);
 }
+.brand:hover {
+  text-decoration: none;
+}
 
 .brand__mark {
   display: grid;
   place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  font-family: var(--font-display);
+  width: 2.3rem;
+  height: 2.3rem;
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--brand-contrast);
-  background: linear-gradient(135deg, var(--brand), var(--c-sienna));
-  border-radius: 10px;
-  box-shadow: var(--glow-brand);
+  background: var(--brand);
+  border: var(--border-w) solid var(--line);
+  border-radius: 0;
 }
 
 .brand__text {
@@ -46,32 +48,37 @@
 .brand__text small {
   font-family: var(--font-mono);
   font-weight: 400;
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
 }
 
 .nav__list {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.15rem;
   list-style: none;
   padding: 0;
 }
 
 .nav__link {
   display: inline-block;
-  padding: 0.5rem 0.85rem;
+  padding: 0.45rem 0.75rem;
   color: var(--text);
+  font-family: var(--font-mono);
   font-size: var(--step--1);
   font-weight: 500;
-  border-radius: var(--radius-s);
+  border: var(--border-w) solid transparent;
+  border-radius: 0;
   transition:
     color var(--transition),
+    border-color var(--transition),
     background var(--transition);
 }
 .nav__link:hover {
   color: var(--text-strong);
   background: var(--surface-2);
+  border-color: var(--border);
+  text-decoration: none;
 }
 
 .header__actions {
@@ -83,22 +90,20 @@
 .icon-btn {
   display: grid;
   place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.3rem;
+  height: 2.3rem;
   color: var(--text);
   background: var(--surface-2);
   border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-s);
+  border-radius: 0;
   cursor: pointer;
   transition:
     color var(--transition),
-    border-color var(--transition),
-    transform var(--transition);
+    border-color var(--transition);
 }
 .icon-btn:hover {
   color: var(--brand);
-  border-color: var(--brand);
-  transform: translateY(-1px);
+  border-color: var(--line);
 }
 
 .menu-toggle {
@@ -109,23 +114,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  color: var(--system);
+  color: var(--brand);
 }
 .nav__link--route:hover {
-  color: var(--system);
-  background: color-mix(in srgb, var(--system) 12%, transparent);
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: var(--border);
 }
 
 .cmdk-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  height: 2.4rem;
+  height: 2.3rem;
   padding: 0 0.6rem;
   color: var(--text-muted);
   background: var(--surface-2);
   border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-s);
+  border-radius: 0;
+  font-family: var(--font-mono);
   cursor: pointer;
   transition:
     color var(--transition),
@@ -133,7 +140,7 @@
 }
 .cmdk-btn:hover {
   color: var(--brand);
-  border-color: var(--brand);
+  border-color: var(--line);
 }
 .cmdk-btn kbd {
   font-family: var(--font-mono);
@@ -158,15 +165,18 @@
 }
 .mobile-nav a {
   display: block;
-  padding: 0.75rem 0.85rem;
-  border-radius: var(--radius-s);
+  padding: 0.7rem 0.85rem;
+  border: var(--border-w) solid transparent;
+  border-radius: 0;
   color: var(--text);
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-weight: 500;
 }
 .mobile-nav a:hover {
   background: var(--surface-2);
+  border-color: var(--border);
   color: var(--text-strong);
+  text-decoration: none;
 }
 
 @media (max-width: 760px) {
@@ -181,6 +191,6 @@
   }
   .header--open .mobile-nav {
     display: block;
-    border-top: var(--border-w) solid var(--border);
+    border-top: var(--border-w) solid var(--line);
   }
 }

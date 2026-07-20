@@ -6,17 +6,16 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 12vh;
-  background: color-mix(in srgb, #000 55%, transparent);
-  backdrop-filter: blur(4px);
-  animation: fade 150ms ease;
+  background: color-mix(in srgb, var(--line) 32%, transparent);
+  animation: fade 120ms ease;
 }
 
 .cmdk__panel {
   width: min(100% - 2rem, 560px);
   background: var(--surface-1);
-  border: var(--border-w) solid var(--border-strong);
-  border-radius: var(--radius-m);
-  box-shadow: var(--shadow);
+  border: var(--border-w) solid var(--line);
+  border-radius: 0;
+  box-shadow: var(--shadow-hard);
   overflow: hidden;
 }
 
@@ -25,7 +24,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.9rem 1rem;
-  border-bottom: var(--border-w) solid var(--border);
+  border-bottom: var(--border-w) solid var(--line);
   color: var(--text-muted);
 }
 .cmdk__search input {
@@ -34,7 +33,7 @@
   border: 0;
   background: transparent;
   color: var(--text-strong);
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: var(--step-0);
 }
 .cmdk__search input:focus {
@@ -45,7 +44,7 @@
   font-size: 0.65rem;
   padding: 0.15rem 0.4rem;
   border: var(--border-w) solid var(--border);
-  border-radius: 5px;
+  border-radius: 0;
   color: var(--text-muted);
 }
 
@@ -61,13 +60,17 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-s);
+  padding: 0.6rem 0.7rem;
+  border: var(--border-w) solid transparent;
+  border-radius: 0;
   cursor: pointer;
   color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
 }
 .cmdk__item.is-selected {
-  background: var(--surface-3);
+  background: var(--surface-2);
+  border-color: var(--border);
   color: var(--text-strong);
 }
 .cmdk__item.is-selected .pi:first-child {
