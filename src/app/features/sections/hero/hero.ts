@@ -7,7 +7,7 @@ import { ResumeService } from '../../../core/services/resume.service';
   template: `
     <section id="top" class="hero container">
       <div class="hero__intro">
-        <p class="eyebrow">Full-Stack Engineer</p>
+        <!-- <p class="eyebrow">Full-Stack Engineer</p> -->
 
         <h1 class="hero__name">
           {{ profile().name }}<span class="hero__caret" aria-hidden="true"></span>
@@ -31,16 +31,31 @@ import { ResumeService } from '../../../core/services/resume.service';
           </a>
         </div>
 
-        <ul class="hero__links">
-          @for (link of profile().links; track link.href) {
-            <li>
-              <a [href]="link.href" rel="noopener" target="_blank" [attr.aria-label]="link.label">
-                <i [class]="link.icon" aria-hidden="true"></i>
-                <span>{{ link.handle }}</span>
-              </a>
-            </li>
+        <div class="hero__contact">
+          <ul class="hero__links">
+            @for (link of socialLinks(); track link.href) {
+              <li>
+                <a [href]="link.href" rel="noopener" target="_blank" [attr.aria-label]="link.label">
+                  <i [class]="link.icon" aria-hidden="true"></i>
+                  <span>{{ link.handle }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+
+          @if (emailLink(); as email) {
+            <a
+              class="hero__email"
+              [href]="email.href"
+              rel="noopener"
+              target="_blank"
+              [attr.aria-label]="email.label"
+            >
+              <i [class]="email.icon" aria-hidden="true"></i>
+              <span>{{ email.handle }}</span>
+            </a>
           }
-        </ul>
+        </div>
       </div>
 
       <!-- Flat terminal panel — a plain, honest shell session, not a glossy
@@ -76,4 +91,10 @@ import { ResumeService } from '../../../core/services/resume.service';
 export class Hero {
   private readonly resume = inject(ResumeService);
   protected readonly profile = computed(() => this.resume.data().profile);
+  protected readonly socialLinks = computed(() =>
+    this.profile().links.filter((link) => !link.href.startsWith('mailto:')),
+  );
+  protected readonly emailLink = computed(() =>
+    this.profile().links.find((link) => link.href.startsWith('mailto:')),
+  );
 }

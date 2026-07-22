@@ -1,75 +1,57 @@
-/* Mobile-first: one column. Long tech names wrap inside their chip so a card
-   never overflows its width. */
 .skills {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-s);
+  gap: 0;
+  margin-top: 1.6rem;
 }
 
 .skill-group {
-  padding: var(--space-m);
-  min-width: 0; /* let grid items shrink so chips can wrap instead of overflow */
+  padding-block: 0.8rem;
+  border-top: var(--border-w) solid var(--border);
 }
-.skill-group:hover {
-  border-color: var(--border-strong);
+
+.skill-group:first-child {
+  border-top: none;
 }
 
 .skill-group__name {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: var(--step-1);
-  margin-bottom: var(--space-s);
+  font-size: var(--step-0);
+  margin-bottom: 0.4rem;
 }
 
 .skill-group__dot {
-  width: 0.6rem;
-  height: 0.6rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: var(--brand);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 20%, transparent);
   flex: none;
 }
 
 .skill-group:nth-child(2n) .skill-group__dot {
   background: var(--system);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--system) 20%, transparent);
 }
 
 .skill-group__items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  list-style: none;
-  padding: 0;
   margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
 }
 
-/* Let long labels wrap rather than force the card wider than its column. */
-.skill-group__items .chip {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-}
-
-/* Tablet: two columns. */
-@media (min-width: 601px) {
-  .skills {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Desktop: three cards on the top row, two wider cards stretched below.
-   Six-column grid — top cards span 2 (3 × 2 = 6), bottom cards span 3 (2 × 3 = 6). */
+/* Desktop: two columns of stacked groups. */
 @media (min-width: 901px) {
   .skills {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--space-s);
   }
-  .skill-group {
-    grid-column: span 2;
+
+  .skill-group:nth-child(2) {
+    border-top: none;
   }
-  .skill-group:nth-child(4),
-  .skill-group:nth-child(5) {
-    grid-column: span 3;
+
+  .skill-group--wide {
+    grid-column: 1 / -1;
   }
 }

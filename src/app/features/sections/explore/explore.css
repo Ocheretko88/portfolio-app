@@ -11,10 +11,6 @@
   padding: var(--space-l);
   color: var(--text);
 }
-.explore__card:hover {
-  border-color: var(--brand);
-  transform: translateY(-3px);
-}
 .explore__card h3 {
   font-size: var(--step-2);
 }

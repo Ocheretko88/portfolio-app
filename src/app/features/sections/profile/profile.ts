@@ -6,8 +6,7 @@ import { ResumeService } from '../../../core/services/resume.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section id="about" class="section container">
-      <p class="eyebrow">About</p>
-      <h2 class="section-title">Owning features across the whole stack</h2>
+      <h2 class="section-title">About</h2>
 
       <div class="profile">
         <p class="profile__summary">{{ profile().summary }}</p>

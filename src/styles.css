@@ -1,16 +1,14 @@
 /* =============================================================================
-   Portfolio design system — "terminal / brutalist"
+   Portfolio design system
    -----------------------------------------------------------------------------
-   Flat, high-contrast, monospace-forward. No gradients, no glows, no
-   glassmorphism, no 3D transforms. Hard 1px rules, square corners, and a
-   single restrained accent doing real semantic work:
+   Clean, high-contrast, monospace-accented. Soft elevation shadows, rounded
+   corners, and a single restrained accent doing real semantic work:
 
-     ink    -> text & hard frames
+     ink    -> text
      paper  -> canvas (light default) / near-black canvas (dark)
      accent -> brand / self (flat sienna in light, amber in dark)
 
-   Depth, where it exists at all, is a hard offset shadow (Nx Ny 0) — never a
-   blur. Colours are CSS custom properties, flipped by [data-theme].
+   Colours are CSS custom properties, flipped by [data-theme].
    ========================================================================== */
 
 @import 'primeicons/primeicons.css';
@@ -20,11 +18,11 @@
 
 /* ----- Palette primitives ------------------------------------------------ */
 :root {
-  /* Accent — one colour, two tints */
-  --c-sienna: #b8501a;
-  --c-sienna-deep: #8f3d12;
-  --c-amber: #e8863b;
-  --c-amber-soft: #f0a15f;
+  /* Accent — Cosmic Orange family, one colour, two tints */
+  --c-sienna: #c2622e;
+  --c-sienna-deep: #96481e;
+  --c-amber: #e2793c;
+  --c-amber-soft: #f0a06a;
 
   /* Secondary / "system" — a desaturated slate (no neon). Used sparingly:
      alternating skill dots, and the retained-but-hidden X-Ray/Security pages. */
@@ -53,19 +51,19 @@
 
   /* Spacing */
   --space-2xs: 0.375rem;
-  --space-xs: 0.625rem;
-  --space-s: 1rem;
+  --space-xs: 0.8rem;
+  --space-s: 1.3rem;
   --space-m: 1.5rem;
   --space-l: 2.5rem;
   --space-xl: 4rem;
   --space-2xl: 6rem;
 
-  /* Brutalist geometry: square everything, honest 1px rules */
-  --radius-s: 0;
-  --radius-m: 0;
-  --radius-l: 0;
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 20px;
   --border-w: 1px;
 
+  --header-h: 4.25rem;
   --maxw: 1120px;
   --transition: 130ms cubic-bezier(0.2, 0, 0, 1);
 }
@@ -74,43 +72,42 @@
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f4f2ec;
-  --bg-grid: rgba(20, 22, 26, 0.045);
-  --surface-1: #fbfaf6;
-  --surface-2: #eceae1;
-  --surface-3: #e2dfd4;
-  --line: #14161a; /* hard brutalist frame colour */
-  --border: rgba(20, 22, 26, 0.16);
-  --border-strong: rgba(20, 22, 26, 0.42);
+  --bg: #fbf3e7;
+  --surface-1: #fdf7ec;
+  --surface-2: #f6e9d8;
+  --surface-3: #efdcc0;
+  --line: #2a1d12;
+  --border: rgba(60, 40, 20, 0.1);
+  --border-strong: rgba(60, 40, 20, 0.22);
 
-  --text-strong: #14161a;
-  --text: #35383f;
-  --text-muted: #6b7079;
+  --text-strong: #2a1d12;
+  --text: #4a3d33;
+  --text-muted: #8a7a68;
 
   --brand: var(--c-sienna);
   --brand-strong: var(--c-sienna-deep);
-  --brand-contrast: #fbfaf6;
-  --brand-soft: rgba(184, 80, 26, 0.1);
+  --brand-contrast: #fffaf3;
+  --brand-soft: rgba(194, 98, 46, 0.12);
   --system: var(--c-slate);
   --danger: var(--c-danger);
 
   --live: var(--c-live);
   --focus-ring: var(--c-sienna);
-  --shadow-hard: 4px 4px 0 var(--line);
-  --shadow-hard-sm: 3px 3px 0 var(--line);
+  --shadow-sm: 0 1px 2px rgba(42, 29, 18, 0.06);
+  --shadow-md: 0 8px 24px rgba(42, 29, 18, 0.08), 0 2px 6px rgba(42, 29, 18, 0.05);
+  --shadow-lg: 0 20px 48px rgba(42, 29, 18, 0.16), 0 6px 16px rgba(42, 29, 18, 0.08);
 }
 
 /* ----- Dark theme ------------------------------------------------------- */
 :root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #0c0d10;
-  --bg-grid: rgba(240, 239, 233, 0.04);
-  --surface-1: #131417;
-  --surface-2: #191b20;
-  --surface-3: #21242a;
+  --surface-1: #16181c;
+  --surface-2: #1b1e23;
+  --surface-3: #23262c;
   --line: #f0efe9;
-  --border: rgba(240, 239, 233, 0.14);
-  --border-strong: rgba(240, 239, 233, 0.42);
+  --border: rgba(240, 239, 233, 0.1);
+  --border-strong: rgba(240, 239, 233, 0.22);
 
   --text-strong: #f0efe9;
   --text: #c7c9cf;
@@ -118,15 +115,16 @@
 
   --brand: var(--c-amber);
   --brand-strong: var(--c-amber-soft);
-  --brand-contrast: #14100a;
-  --brand-soft: rgba(232, 134, 59, 0.14);
+  --brand-contrast: #17100a;
+  --brand-soft: rgba(226, 121, 60, 0.16);
   --system: var(--c-slate-bright);
   --danger: var(--c-danger-bright);
 
   --live: var(--c-live-dark);
   --focus-ring: var(--c-amber);
-  --shadow-hard: 4px 4px 0 var(--line);
-  --shadow-hard-sm: 3px 3px 0 var(--line);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* ----- Reset ------------------------------------------------------------- */
@@ -149,14 +147,6 @@ body {
   line-height: 1.6;
   color: var(--text);
   background-color: var(--bg);
-  /* Flat canvas with a faint monospace-grid texture — no coloured glows. */
-  background-image:
-    linear-gradient(var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-  background-size:
-    52px 52px,
-    52px 52px;
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   transition:
@@ -191,7 +181,7 @@ a:hover {
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: 0;
+  border-radius: var(--radius-s);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -218,7 +208,7 @@ a:hover {
   background: var(--brand);
   color: var(--brand-contrast);
   font-family: var(--font-mono);
-  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-s);
   font-weight: 600;
   transition: top var(--transition);
 }
@@ -233,52 +223,44 @@ a:hover {
 }
 
 .section {
-  padding-block: var(--space-2xl);
+  padding-block: 1.6rem;
 }
 
-/* Section label reads like a source comment: "// About" */
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
+  margin-bottom: 1.6rem;
   font-family: var(--font-mono);
   font-size: var(--step--1);
   letter-spacing: 0.02em;
   color: var(--text-muted);
 }
-.eyebrow::before {
-  content: '//';
-  color: var(--brand);
-  font-weight: 600;
-}
 
 .section-title {
   font-size: var(--step-3);
-  margin-block: 0.6rem var(--space-l);
+  margin-block: 0 1.6rem;
   max-width: 22ch;
 }
 
 /* ----- Shared components ------------------------------------------------- */
 .card {
   background: var(--surface-1);
-  border: var(--border-w) solid var(--border-strong);
-  border-radius: 0;
-  transition:
-    border-color var(--transition),
-    box-shadow var(--transition),
-    transform var(--transition);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-sm);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.28rem 0.6rem;
+  padding: 0.28rem 0.7rem;
   font-size: var(--step--1);
   font-family: var(--font-mono);
   color: var(--text);
   background: var(--surface-2);
   border: var(--border-w) solid var(--border);
-  border-radius: 0;
+  border-radius: 999px;
   white-space: nowrap;
 }
 
@@ -292,8 +274,8 @@ a:hover {
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: var(--step-0);
-  border-radius: 0;
-  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-s);
+  border: var(--border-w) solid transparent;
   background: var(--btn-bg);
   color: var(--btn-fg);
   cursor: pointer;
@@ -303,20 +285,20 @@ a:hover {
     background var(--transition),
     color var(--transition);
 }
-/* Brutalist "push": lifts onto a hard offset shadow, presses flat on click. */
 .btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-hard);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
   color: var(--brand-contrast);
   text-decoration: none;
 }
 .btn:active {
-  transform: translate(0, 0);
-  box-shadow: none;
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 .btn--ghost {
   --btn-bg: transparent;
   --btn-fg: var(--text-strong);
+  border-color: var(--border);
 }
 .btn--ghost:hover {
   color: var(--text-strong);

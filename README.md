@@ -68,11 +68,7 @@ API repo's `docs/CONTRACTS.md`.
 ## Roadmap
 
 - [x] CV / resume site — data-driven, accessible, deployed (Vercel)
-- [x] `GET /api/v1/resumes` served by the Laravel API, consumed with a fallback
-- [x] Typed API client + OpenAPI-generated contract
-- [x] **Under-the-hood X-Ray** — animates a real, server-timed request lifecycle
-- [x] **Security Lab** — simulated XSS / SQL-injection: vulnerable vs. hardened
-- [x] Command palette (⌘K) navigation
+- [ ] **BLOG**
 
 ## License
 

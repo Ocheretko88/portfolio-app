@@ -1,11 +1,14 @@
 .profile {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
-  gap: var(--space-xl);
-  align-items: start;
+  gap: 2.6rem;
+  align-items: stretch;
 }
 
 .profile__summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   font-size: var(--step-1);
   line-height: 1.7;
   color: var(--text);
@@ -14,18 +17,18 @@
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-s);
+  grid-template-rows: repeat(2, 1fr);
+  gap: var(--space-xs);
   margin: 0;
+  height: 100%;
 }
 
 .stat {
-  padding: var(--space-m);
+  padding: var(--space-s);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.35rem;
-}
-.stat:hover {
-  box-shadow: var(--shadow-hard-sm);
 }
 
 .stat__value {
@@ -44,6 +47,6 @@
 @media (max-width: 860px) {
   .profile {
     grid-template-columns: 1fr;
-    gap: var(--space-l);
+    gap: 2.6rem;
   }
 }

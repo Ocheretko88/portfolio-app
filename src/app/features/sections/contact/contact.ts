@@ -6,10 +6,10 @@ import { ResumeService } from '../../../core/services/resume.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section id="contact" class="section container">
+      <h2 class="section-title">Contact</h2>
+
       <div class="card contact">
         <div class="contact__text">
-          <p class="eyebrow">Contact</p>
-          <h2 class="contact__title">Let's build something solid</h2>
           <p class="text-muted">
             Open to full-stack roles and interesting problems. The fastest way to reach me is email
             — I usually reply within a day.

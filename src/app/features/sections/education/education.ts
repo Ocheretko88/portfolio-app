@@ -6,12 +6,11 @@ import { ResumeService } from '../../../core/services/resume.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section id="education" class="section container">
-      <p class="eyebrow">Background</p>
-      <h2 class="section-title">Education &amp; certifications</h2>
+      <h2 class="section-title">Education</h2>
 
       <div class="edu">
         <div class="edu__col">
-          <h3 class="edu__heading">Education</h3>
+          <!-- <h3 class="edu__heading">Education</h3> -->
           <ul class="edu__list">
             @for (item of education(); track item.institution + item.qualification) {
               <li class="card edu__item">
@@ -26,7 +25,7 @@ import { ResumeService } from '../../../core/services/resume.service';
         </div>
 
         <div class="edu__col">
-          <h3 class="edu__heading">Certifications</h3>
+          <!-- <h3 class="edu__heading">Certifications</h3> -->
           <ul class="edu__list">
             @for (cert of certifications(); track cert.name) {
               <li class="card edu__item">
