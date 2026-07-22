@@ -41,8 +41,6 @@ src/app/
 └─ features/
    ├─ home/                  # landing page (composes the sections)
    ├─ sections/              # hero, profile, skills, experience, education, explore, contact
-   ├─ xray/                  # X-Ray request visualiser (+ SignalStore)
-   └─ security-lab/          # simulated SQL-injection / XSS lab (+ SignalStore)
 ```
 
 Principles enforced in the code: data-driven UI, signals everywhere (`computed`,
