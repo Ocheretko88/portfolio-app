@@ -17,6 +17,41 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-3 — GET /gym/sessions (list + detail)            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-api feat(gym): add GET /gym/sessions list+detail endpoints [P1-3] (pending user push)
+What changed: `SessionRepository::paginate()` (date-range filter via `whereDate`
+on `performed_at`, either bound optional, newest-first + id tiebreak, eager
+`with('setEntries')`, real `LengthAwarePaginator`) + `SessionRepository::
+findOrFail()` (eager-loaded, lets `ModelNotFoundException` bubble to the
+existing global handler for the standard 404 envelope — no per-endpoint 404
+code) on both the `SessionRepository` contract and its Eloquent impl +
+`SessionService::list()`/`find()` (thin passthroughs) + `App\Http\Requests\Gym\
+ListSessionsRequest` (from/to/page/perPage, `to` must be `after_or_equal:from`)
++ `WorkoutSessionResource::collection()` (additive, mirrors `SetEntryResource`'s
+existing pattern — `fromModel()` untouched) + `sessions()`/`session()` controller
+actions + 2 new routes (`GET /gym/sessions`, `GET /gym/sessions/{id}`).
+Criteria: all MET — pagination + inclusive date-range filter verified at
+repository, service, and endpoint layers; envelope carries all six
+`PaginationMeta` fields on the list route; N+1 verified empirically by the
+evaluator (3 queries total for 5 sessions × 3 sets, not 1+N); Resource shape
+stable (no existing field touched); 14 new tests (6 Feature + 5 Repository + 3
+Service), 62/62 full suite, 0 regressions; Pint clean.
+Checks: `php artisan test` 62/62 (full suite, real Postgres 16); `pint --test`
+clean — both independently re-run by the evaluator, not taken from the
+executor's paste.
+Notes / decisions: Evaluator flagged three non-blocking risk notes for later
+steps: (1) `ListSessionsRequest`'s `after_or_equal:from` rejects an inverted
+range with 422 rather than silently returning empty — stricter than the OpenAPI
+spec, which is silent on the case; worth confirming the P1-6/7 frontend expects
+a 422 there. (2) `perPage > 100` is rejected (422) rather than clamped —
+defensible, but pin the behavior in the contract if a client ever needs the
+clamp instead. (3) The "Service unit test" for this slice runs against the real
+container + DB (integration-style, matching the P1-2 precedent already in the
+same test file) rather than a mocked repository — flagged as a whole-suite
+naming/precedent question for a future cleanup pass, not drift introduced by
+this step.
+
 ## P1-2 — POST /gym/sessions            2026-07-27
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-api feat(gym): add POST /gym/sessions with server-side PR detection [P1-2] (pending user push)

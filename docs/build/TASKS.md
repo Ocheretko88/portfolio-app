@@ -91,7 +91,7 @@ pre-expand far-future work.
 - **Acceptance:** valid payload persists session+sets; PR detection correct on a fixture; invalid payload → 422 in the standard error shape; feature test; BE-CHECK.
 - **Evaluator focus:** PR/volume computed server-side; grams stored; no logic in controller.
 
-### P1-3 · GET /gym/sessions (list + detail) — `READY`
+### P1-3 · GET /gym/sessions (list + detail) — `DONE`
 - **Scope:** paginated list (date-range filter) + `GET /{id}`.
 - **Acceptance:** pagination + range filter tested; envelope; BE-CHECK.
 - **Evaluator focus:** N+1 avoided (eager load); Resource shape stable.
