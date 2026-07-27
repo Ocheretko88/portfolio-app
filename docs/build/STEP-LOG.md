@@ -17,6 +17,81 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-1 — GET /gym/exercises            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-api feat(gym): add GET /gym/exercises endpoint [P1-1] (pending user push)
+What changed: `App\Contracts\ExerciseRepository` (interface) +
+`App\Repositories\EloquentExerciseRepository` (filters by primary_muscle,
+whereJsonContains('equipment', ...), category — each applied only when
+present) + `App\Services\ExerciseService` (thin passthrough) +
+`App\Http\Requests\Gym\ListExercisesRequest` (Rule::in for category) +
+`App\Http\Resources\Gym\ExerciseResource` (static fromModel/collection,
+camelCase matching the P0-7 OpenAPI Exercise schema exactly) + a new
+`exercises()` action on `GymController` + the `ExerciseRepository` bind in
+`AppServiceProvider` + the route. Reused the existing app/{Contracts,
+Repositories,Services,Http} structure per the P0-3 precedent (no app/Domain
+tree).
+Criteria: all MET — seeded catalog returned; muscle/equipment/category filters
+verified (AND semantics, empty-result case); Feature test (happy path +
+envelope + 3 filters + 422 in the real `{error:{code,message,details}}` shape,
+not Laravel's default); Service test (container-resolved, proves the bind);
+Repository integration test (RefreshDatabase, real Postgres 16, JSON
+containment verified both directions).
+Checks: `php artisan test` 35/35 (full suite, incl. 25 pre-existing); Gym-only
+filter 22/22; `pint --test` clean (verified non-vacuous by pointing Pint at a
+deliberately malformed file first). Verified against a real local Postgres 16,
+not sqlite — matches what CI now runs after the P0-2 CI fix.
+Notes / decisions: Evaluator flagged (non-blocking) that the Service/Repository
+test split is thin because `ExerciseService::catalog` is a pure passthrough —
+acceptable here per repo precedent (`ResumeServiceTest`), but flagged that
+P1-2/P1-4 (where services hold real logic — PR detection, SQL aggregation)
+need a stricter split, not a passthrough-style test. Endpoint test builds rows
+via factory, not the real seeder — acceptable since `ExerciseCatalogSeederTest`
+already covers seeder correctness separately.
+
+---
+## P0-7 — OpenAPI contract + generated types            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent, 3 rounds)   Verdict: PASS
+Commit: portfolio-api feat(gym): add Phase-1 gym endpoints + schemas to OpenAPI contract [P0-7]
+        portfolio-app feat(gym): regenerate contract.ts from Phase-1 gym OpenAPI spec [P0-7]
+What changed: Added 4 paths (`GET /gym/exercises`, `GET`+`POST /gym/sessions`,
+`GET /gym/sessions/{id}`, `GET /gym/stats/overview`) and 9 schemas (`Exercise`,
+`SetEntry`, `SetEntryInput`, `WorkoutSession`, `CreateSessionRequest`,
+`StatsOverview`, `PaginationMeta`, `ExerciseCategory`, `WeightUnit`) to
+`portfolio-api/docs/openapi.yaml`, matching P1-1..P1-4 exactly (not the full §4
+table — PATCH/DELETE sessions and later-phase routes correctly excluded, no P1
+step covers them yet). Mirrored byte-identically to
+`portfolio-app/src/app/core/api/openapi.yaml`. Regenerated `contract.ts` with
+the real `openapi-typescript` v7.13.0 CLI.
+Criteria: all MET — TYPES clean (byte-identical to fresh regeneration), spec
+lints (0 struct/parse errors on 3.1; only pre-existing rule classes —
+security-defined, license, 4xx-response — scale proportionally with new
+endpoints, same as baseline), contract matches §4 endpoints for P1-1..P1-4, no
+hand-edited generated file.
+Checks: typecheck clean; vitest 12/12; format:check clean (incl. regenerated
+contract.ts after `prettier --write`); build fails only on the pre-existing
+Google Fonts inline step (sandbox has no route to fonts.googleapis.com — same
+caveat as P0-8's log entry, unrelated to this diff).
+Notes / decisions: Evaluator round 1 caught a real defect — `nullable: true` is
+an OpenAPI 3.0 keyword invalid under this spec's declared `3.1.0`; fixed to JSON
+Schema 2020-12 type unions (`type: [string, 'null']`) across 19 fields.
+Evaluator round 2 caught that the fix existed only in a cloud scratch copy and
+was never written to the real files on the user's device — corrected by writing
+through the device-commit path and re-verifying directly on-device. Also found
+(and fixed by regenerating): the previously committed `contract.ts` was not
+genuine tool output — it only had `components.schemas`, missing the
+`paths`/`operations` interfaces `openapi-typescript` always emits, meaning a
+prior session had hand-written/hand-trimmed a "generated" file (a
+CONVENTIONS.md hard-list violation). `PaginationMeta` duplicates `Meta`'s two
+fields rather than composing via `allOf` — flagged as a risk note, not a
+blocker (harmless while `Meta` is stable). Separately (reported by the user,
+fixed alongside): CI was broken since P0-2 — the Neon default-connection switch
+left `phpunit.xml` pointing pgsql at `DB_DATABASE=:memory:` with no Postgres
+service in CI and no `pdo_pgsql` extension. Added a `postgres:16` service +
+extension to `.github/workflows/ci.yml` and corrected the test env vars;
+verified 25/25 backend tests + Pint clean against a real local Postgres 16
+before handing the fix back.
+
 ## P0-6 — Exercise catalog seeder            2026-07-27
 Executor: Claude (Opus, cloud session)   Evaluator: self-review (Mode C)   Verdict: PASS
 What changed: `ExerciseCatalogSeeder` — 72 exercises (Ukrainian name + English

@@ -55,7 +55,7 @@ pre-expand far-future work.
 - **Verify:** `php artisan db:seed --class=ExerciseCatalogSeeder` twice (idempotent) · **Evaluator focus:** corpus coverage is complete (cross-check the list in the fixture).
 - **Pending on your machine:** run the seeder once against your real Neon DB (`php artisan db:seed --class=ExerciseCatalogSeeder`) to populate the 72 exercises — the migrations are run, but seeding is a separate step.
 
-### P0-7 · OpenAPI contract + generated types — `READY`
+### P0-7 · OpenAPI contract + generated types — `DONE`
 - **Deps:** P0-3 · **Scope:** `portfolio-api/docs/openapi.yaml`, `portfolio-app/src/app/core/api/openapi.yaml`, generated `contract.ts`
 - **Goal:** add gym schemas + Phase-1 paths to the spec; regenerate app types.
 - **Acceptance:** `TYPES` produces a clean, committed `contract.ts`; spec lints.
@@ -81,12 +81,12 @@ pre-expand far-future work.
 > Postgres for stats/window-function queries). A step is not `DONE` without all
 > three where they apply.
 
-### P1-1 · GET /gym/exercises — `BLOCKED` (P0-7)
+### P1-1 · GET /gym/exercises — `DONE`
 - **Scope:** controller/service/repo/resource/request for catalog list + filters (muscle, equipment, category).
 - **Acceptance:** returns seeded catalog; filters work; feature test; envelope; BE-CHECK.
 - **Evaluator focus:** layering + Form Request validation + Resource shape.
 
-### P1-2 · POST /gym/sessions — `BLOCKED` (P1-1)
+### P1-2 · POST /gym/sessions — `READY`
 - **Scope:** create session + nested set entries; validation; `is_pr` + `personal_records` computed in service; **`cycle_day` accepted**.
 - **Acceptance:** valid payload persists session+sets; PR detection correct on a fixture; invalid payload → 422 in the standard error shape; feature test; BE-CHECK.
 - **Evaluator focus:** PR/volume computed server-side; grams stored; no logic in controller.
