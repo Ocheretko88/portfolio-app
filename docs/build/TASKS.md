@@ -101,22 +101,22 @@ pre-expand far-future work.
 - **Acceptance:** numbers verified against a known fixture session set; computed via SQL not PHP loops; test; BE-CHECK.
 - **Evaluator focus:** SQL aggregation; `SUM(reps*weight_grams)` correct; timezone-safe week bucketing.
 
-### P1-5 · Frontend api client + store — `BLOCKED` (P0-8, P1-1)
+### P1-5 · Frontend api client + store — `DONE`
 - **Scope:** `gym-api.ts` (typed, one seam) + `gym.store` (SignalStore: catalog, sessions, stats).
 - **Acceptance:** store loads catalog + stats via generated types; unit test on a selector; FE-CHECK.
 - **Evaluator focus:** uses generated contract types; SignalStore shape matches ThemeStore idiom.
 
-### P1-6 · Logging form — `BLOCKED` (P1-5, P1-2)
+### P1-6 · Logging form — `READY` (P1-5, P1-2)
 - **Scope:** `features/gym/log/*` — Reactive form, fully selectable (exercise search-select, sets/reps/weight steppers, RPE/tempo/rest optional, unit toggle, cycle-day optional), "repeat last set", notes = only free text; submits → POST.
 - **Acceptance:** logs a session in a few interactions; keyboard-only operable; AXE clean; component test; FE-CHECK.
 - **Evaluator focus:** everything-selectable rule; Reactive forms; a11y; matches spec §6.1.
 
-### P1-7 · History list + detail — `BLOCKED` (P1-5, P1-3)
+### P1-7 · History list + detail — `READY` (P1-5, P1-3)
 - **Scope:** `features/gym/history/*` — session list + detail view.
 - **Acceptance:** shows real logged sessions incl. cycle-day + notes; a11y; test; FE-CHECK.
 - **Evaluator focus:** OnPush, native control flow, no data massaging in template.
 
-### P1-8 · Dashboard: volume tile + trend chart — `BLOCKED` (P1-4, P1-5)
+### P1-8 · Dashboard: volume tile + trend chart — `READY` (P1-4, P1-5)
 - **Scope:** `features/gym/dashboard/*` — total-volume stat tile + volume-over-time chart on real `/stats` data; Apple-style; light+dark.
 - **Acceptance:** tile + chart render real data; dark/light parity; contrast passes; test; FE-CHECK. Read the **dataviz** guidance before choosing colors/marks.
 - **Evaluator focus:** design-system coherence, accessible chart, no hard-coded numbers.

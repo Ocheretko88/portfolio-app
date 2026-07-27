@@ -17,6 +17,82 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-5 — Frontend api client + store            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-app feat(gym): add GymApi seam + GymStore data loaders [P1-5] (pending user push)
+What changed: `GymApi` (`core/api/gym-api.ts`) extended from a bare `ping()`
+scaffold with `exercises()`, `sessions()` and `statsOverview()`, each typed from
+the generated OpenAPI contract and unwrapped through the shared `ApiClient`
+`{data, meta}` envelope (same seam as `ResumeApi`). Query-string building for
+the two filterable endpoints is one small generic `toQueryString<T>()` helper
+that drops undefined/empty keys so an omitted filter never reaches the server
+as `?key=undefined`; the request query shapes (`ListExercisesParams`/
+`ListSessionsParams`) are aliased directly from the generated `operations`
+map in `api-types.ts` (`operations['listGymExercises'|'listGymSessions']
+['parameters']['query']`), not hand-written, so a contract change to those
+filters surfaces as a compile error rather than silently drifting — this was
+the evaluator's one required fix on the first pass (see Notes). `GymStore`
+(`core/state/gym.store.ts`) grew from a `status`-only scaffold to a full
+SignalStore matching the `ThemeStore` idiom (`withState`/`withComputed`/
+`withMethods`, `patchState`, `inject()`): `catalog`/`sessions`/`stats` state
+plus their own `*Loading` flags, `hasCatalog`/`hasStats` computed selectors
+alongside the original `isReady`, and three `loadCatalog()`/`loadSessions()`/
+`loadStats()` methods that call `GymApi`, `catchError` to an empty/null
+fallback (no error state surfaced yet — flagged by the evaluator as a P1-7+
+concern once a filter UI needs to distinguish "no results" from "request
+failed"), and reset the loading flag on completion either way. Loaders are
+invoked explicitly by the consuming component rather than on store
+construction (no `withHooks onInit`, unlike `ThemeStore`), so merely injecting
+`GymStore` never fires an HTTP request — deliberate, since the dashboard
+placeholder and any future test that injects the store shouldn't need a
+backend just to construct it. New `gym.store.spec.ts` covers all three
+loaders (success + one failure path) plus the initial-state/selector
+assertions the acceptance criteria calls for.
+Criteria: all MET after one fix cycle — store loads catalog + stats via
+generated types (confirmed against `contract.ts`'s `Exercise`/`StatsOverview`
+schemas); a real selector test exists (`hasCatalog`/`hasStats`/`isReady`,
+each asserted both before and after a load); FE-CHECK green except the
+pre-existing, previously-documented Google Fonts sandbox limitation (see
+Checks). 18/18 tests (was 12/4 files, now 18/5), 0 regressions.
+Checks: `npm test` 18/18 (5 spec files); `npm run typecheck` clean; `npm run
+format:check` clean (only the untracked, gitignored, generated
+`src/environments/version.ts` flagged, unrelated to this diff); `npm run
+build` fails solely on the known sandbox-only Google Fonts 403 inlining issue
+(no outbound route to fonts.googleapis.com here), documented against P0-7/
+P0-8 and not a regression — all independently re-run and confirmed by the
+evaluator.
+Notes / decisions: First evaluator pass FAILed on two points, both fixed and
+re-verified PASS: (1) `ListExercisesParams`/`ListSessionsParams` were
+hand-written interfaces duplicating shapes the OpenAPI generator already owns
+— fixed by aliasing them from `operations[...]['parameters']['query']` in
+`api-types.ts` instead. (2) the `dashboard.spec.ts` collateral edit (adding
+`provideHttpClient()`/`provideHttpClientTesting()` so `GymDashboard`'s test
+keeps resolving `GymStore`'s now-HTTP-backed dependency chain) had claimed DI
+would fail without it; the evaluator proved DI resolves fine either way
+(`HttpClient` is root-provided) and the edit was corrected to state its real,
+weaker justification — test hygiene against a future eager-load regression —
+rather than reverted, since the evaluator judged the addition itself
+harmless and net-positive. `dashboard.spec.ts` is out of P1-5's literal file
+scope but was necessary collateral, not scope creep, since `GymDashboard`
+already injects `GymStore`. `PaginationMeta` is deliberately not yet surfaced
+through `GymApi.sessions()` — `ApiClient` only unwraps `data`, dropping
+`meta` — deferred to P1-7 (History list), the first step that actually needs
+the page/total numbers. Also fixed as part of this step: `TASKS.md` carried a
+stale `BLOCKED (P0-8, P1-1)` label on P1-5 even though both listed deps were
+already `DONE` (a ledger-maintenance bug, not a real blocker — confirmed by
+the evaluator); flipped to `DONE` here, and the same stale-label bug on
+P1-6/P1-7/P1-8 (whose listed deps are now all `DONE` following this step)
+corrected to `READY` in the same pass. Evaluator risk notes for later steps:
+`loadSessions()`/etc. use plain `subscribe` with no `switchMap`-style
+cancellation, so two overlapping calls (e.g. a fast filter change in P1-7)
+can resolve out of order; `catchError`'s empty/null fallback means the UI
+can't yet distinguish "no data" from "request failed"; `tsconfig.app.json`
+excludes `*.spec.ts` from `typecheck`, so the new spec's DTO literals are
+validated only by esbuild's transform (no type errors would surface there) —
+worth keeping in mind if a spec fixture ever drifts from the real contract
+shape.
+
+---
 ## P1-4 — GET /gym/stats/overview            2026-07-27
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-api feat(gym): add GET /gym/stats/overview endpoint [P1-4] (pending user push)
