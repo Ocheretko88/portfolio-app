@@ -17,6 +17,56 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-4 — GET /gym/stats/overview            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-api feat(gym): add GET /gym/stats/overview endpoint [P1-4] (pending user push)
+What changed: `App\Contracts\StatsRepository` + `App\Repositories\
+EloquentStatsRepository` (6 SQL queries, no PHP-side row iteration: 3×
+`SUM(reps*weight_grams)` joined to `workout_sessions` for all-time/this-week/
+last-week volume, 2× `COUNT(*)` for PR-count-this-month and sessions-this-week,
+1 raw gaps-and-islands CTE — `d - ROW_NUMBER() OVER (ORDER BY d)` — for the
+current streak) + `App\Services\StatsService` (thin passthrough; its only real
+logic is the delta-percent arithmetic on two already-aggregated sums) +
+`statsOverview()` controller action + provider bind + route. Week/month
+boundaries are computed once in PHP via `CarbonImmutable` (app timezone UTC)
+and bound into every query as literal values — the repository never calls
+Postgres's own `now()`/`CURRENT_DATE`, so results can't drift with the DB
+session's timezone GUC. No new Resource class: the Service returns the final
+camelCase `StatsOverview`-shaped array directly, since there's no Eloquent
+model to transform (contract-shaped array in, contract-shaped array out).
+Criteria: all MET — every number computed in SQL (verified via the evaluator's
+own query-log dump: exactly 6 server-side queries, zero `->get()`+PHP-sum
+patterns); `SUM(reps*weight_grams)` confirmed correct and warmup-excluded,
+consistent with `SessionService`'s existing PR-detection precedent; timezone
+safety empirically proven by the evaluator re-running the same fixture under
+three different Postgres session timezones (UTC, America/New_York, Asia/Tokyo)
+with byte-identical results; fixture numbers independently re-derived by the
+evaluator from raw session/set data and matched exactly; 15 new tests (2
+Feature + 4 Service + 9 Repository, incl. 5 dedicated streak-island cases), 77
+full suite (was 62), 0 regressions; Pint clean.
+Checks: `php artisan test` 77/77 (full suite, real Postgres 16); `pint --test`
+clean — both independently re-run by the evaluator.
+Notes / decisions: Design decisions made where the OpenAPI contract is silent,
+all reviewed and accepted by the evaluator as defensible and internally
+consistent: (1) Monday-start ISO week, `[weekStart, weekStart+7d)`, used for
+both the volume bucket and the session count. (2) Streak counts the most
+recent run of consecutive trained days, reading as 0 rather than a stale
+number if that run doesn't reach today or yesterday. (3) `volumeDeltaPct` is
++100% off a zero baseline with volume this week, 0% if both weeks are empty —
+avoids a division-by-zero without a misleading spike. (4) A `json_encode`
+quirk (a whole-number float like `380.0` serializes as `380`) meant the
+endpoint test asserts the decoded int rather than a literal float — a
+test-assertion detail, not an app bug; the Service test still pins the strict
+float type where it matters. Evaluator risk notes for later phases: the streak
+CTE's `performed_at::date` isn't index-backed (fine at portfolio scale, revisit
+if session volume grows); all aggregates are global/unscoped (correct for a
+single-athlete app, would need a user predicate if GymTracker ever goes
+multi-tenant); `sessionsThisWeek` counts a session regardless of whether it has
+any sets, while volume ignores set-less sessions — worth confirming that's the
+intended frontend reading; a +100% delta off a zero baseline shouldn't be
+rendered as a literal "100% increase" without context in the P1-8 dashboard.
+
+---
 ## P1-3 — GET /gym/sessions (list + detail)            2026-07-27
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-api feat(gym): add GET /gym/sessions list+detail endpoints [P1-3] (pending user push)

@@ -96,7 +96,7 @@ pre-expand far-future work.
 - **Acceptance:** pagination + range filter tested; envelope; BE-CHECK.
 - **Evaluator focus:** N+1 avoided (eager load); Resource shape stable.
 
-### P1-4 · GET /gym/stats/overview — `READY`
+### P1-4 · GET /gym/stats/overview — `DONE`
 - **Scope:** aggregates — total volume (all-time + this week + delta), PR count, streak, weekly frequency — **in SQL**.
 - **Acceptance:** numbers verified against a known fixture session set; computed via SQL not PHP loops; test; BE-CHECK.
 - **Evaluator focus:** SQL aggregation; `SUM(reps*weight_grams)` correct; timezone-safe week bucketing.
