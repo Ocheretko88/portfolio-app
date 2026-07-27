@@ -108,6 +108,139 @@ paths:
         '422': { $ref: '#/components/responses/Error' }
         '429': { $ref: '#/components/responses/Error' }
 
+  /api/v1/gym/exercises:
+    get:
+      operationId: listGymExercises
+      summary: Seeded exercise catalog (filterable)
+      tags: [gym]
+      parameters:
+        - name: muscle
+          in: query
+          required: false
+          schema: { type: string }
+          description: Filter by primary muscle (e.g. `chest`, `back`).
+        - name: equipment
+          in: query
+          required: false
+          schema: { type: string }
+          description: Filter by equipment tag (e.g. `barbell`, `machine`).
+        - name: category
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/ExerciseCategory' }
+      responses:
+        '200':
+          description: The exercise catalog, optionally filtered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Exercise' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+
+  /api/v1/gym/sessions:
+    get:
+      operationId: listGymSessions
+      summary: Paginated workout sessions (optionally date-ranged)
+      tags: [gym]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+          description: Day-first date lower bound (inclusive).
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+          description: Day-first date upper bound (inclusive).
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: perPage
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: A page of workout sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/WorkoutSession' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+    post:
+      operationId: createGymSession
+      summary: Log a workout session with its set entries
+      tags: [gym]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSessionRequest' }
+      responses:
+        '201':
+          description: The created session (with server-computed PR flags)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/WorkoutSession' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /api/v1/gym/sessions/{id}:
+    get:
+      operationId: getGymSession
+      summary: One workout session, with its set entries
+      tags: [gym]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: The workout session
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/WorkoutSession' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /api/v1/gym/stats/overview:
+    get:
+      operationId: getGymStatsOverview
+      summary: Dashboard aggregates — volume, PRs, streak, frequency
+      tags: [gym]
+      responses:
+        '200':
+          description: Aggregate stats computed in SQL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/StatsOverview' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+
 components:
   responses:
     Error:
@@ -295,3 +428,137 @@ components:
         input: { type: string }
         vulnerable: { $ref: '#/components/schemas/XssSide' }
         hardened: { $ref: '#/components/schemas/XssSide' }
+
+    PaginationMeta:
+      type: object
+      required: [version, generatedAt, page, perPage, total, totalPages]
+      properties:
+        version: { type: string, example: v1 }
+        generatedAt: { type: string, format: date-time }
+        page: { type: integer, minimum: 1 }
+        perPage: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+
+    ExerciseCategory:
+      type: string
+      enum: [compound, isolation, mobility, cardio]
+
+    WeightUnit:
+      type: string
+      enum: [kg, lb]
+
+    Exercise:
+      type: object
+      required: [id, name, slug, category, isBodyweight, defaultUnit]
+      properties:
+        id: { type: integer }
+        name: { type: string, description: 'Ukrainian display name (athlete logs in Ukrainian).' }
+        slug: { type: string }
+        category: { $ref: '#/components/schemas/ExerciseCategory' }
+        primaryMuscle: { type: [string, 'null'] }
+        secondaryMuscles:
+          type: array
+          items: { type: string }
+        equipment:
+          type: array
+          items: { type: string }
+        isBodyweight: { type: boolean }
+        defaultUnit: { $ref: '#/components/schemas/WeightUnit' }
+
+    SetEntry:
+      type: object
+      required: [id, exerciseId, setNumber, weightGrams, perSide, isWarmup, isPr]
+      properties:
+        id: { type: integer }
+        exerciseId: { type: integer }
+        setNumber: { type: integer, minimum: 1 }
+        reps: { type: [integer, 'null'], minimum: 0 }
+        weightGrams:
+          type: integer
+          minimum: 0
+          description: 'Canonical unit — integer grams, never a float (ADR-0007).'
+        perSide: { type: boolean }
+        rpe: { type: [number, 'null'], minimum: 0, maximum: 10 }
+        tempo: { type: [string, 'null'], example: '3-1-1' }
+        restSeconds: { type: [integer, 'null'], minimum: 0 }
+        isWarmup: { type: boolean }
+        isPr:
+          type: boolean
+          description: 'Computed server-side on write; never client-supplied.'
+        notes:
+          type: [string, 'null']
+          description: 'The only free-text field on a set entry.'
+
+    SetEntryInput:
+      type: object
+      required: [exerciseId, weightGrams]
+      properties:
+        exerciseId: { type: integer }
+        setNumber: { type: integer, minimum: 1 }
+        reps: { type: [integer, 'null'], minimum: 0 }
+        weightGrams: { type: integer, minimum: 0 }
+        perSide: { type: boolean, default: false }
+        rpe: { type: [number, 'null'], minimum: 0, maximum: 10 }
+        tempo: { type: [string, 'null'] }
+        restSeconds: { type: [integer, 'null'], minimum: 0 }
+        isWarmup: { type: boolean, default: false }
+        notes: { type: [string, 'null'] }
+
+    WorkoutSession:
+      type: object
+      required: [id, performedAt, sets]
+      properties:
+        id: { type: integer }
+        performedAt: { type: string, format: date-time }
+        title: { type: [string, 'null'] }
+        cycleDay:
+          type: [integer, 'null']
+          minimum: 1
+          description: 'День циклу — optional training-cycle day (ADR-0007).'
+        durationMin: { type: [integer, 'null'], minimum: 0 }
+        notes:
+          type: [string, 'null']
+          description: 'The only free-text field on a session.'
+        sets:
+          type: array
+          items: { $ref: '#/components/schemas/SetEntry' }
+
+    CreateSessionRequest:
+      type: object
+      required: [performedAt, sets]
+      properties:
+        performedAt: { type: string, format: date-time }
+        title: { type: [string, 'null'] }
+        cycleDay: { type: [integer, 'null'], minimum: 1 }
+        durationMin: { type: [integer, 'null'], minimum: 0 }
+        notes: { type: [string, 'null'] }
+        sets:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/SetEntryInput' }
+
+    StatsOverview:
+      type: object
+      required:
+        [
+          totalVolumeAllTimeGrams,
+          totalVolumeThisWeekGrams,
+          volumeDeltaPct,
+          prCountThisMonth,
+          currentStreakDays,
+          sessionsThisWeek,
+        ]
+      properties:
+        totalVolumeAllTimeGrams:
+          type: integer
+          description: 'SUM(reps * weight_grams) over all sets, all-time.'
+        totalVolumeThisWeekGrams:
+          type: integer
+          description: 'SUM(reps * weight_grams) over all sets, current week.'
+        volumeDeltaPct:
+          type: number
+          description: 'This week vs. previous week, percent change.'
+        prCountThisMonth: { type: integer, minimum: 0 }
+        currentStreakDays: { type: integer, minimum: 0 }
+        sessionsThisWeek: { type: integer, minimum: 0 }
