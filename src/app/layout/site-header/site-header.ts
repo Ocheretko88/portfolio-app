@@ -38,6 +38,7 @@ export class SiteHeader {
   // the target audience (CTOs / senior devs). The routes still exist, so these
   // can be restored by uncommenting when the demos are ready.
   protected readonly routeItems: readonly RouteItem[] = [
+    { label: 'Gym', route: '/gym', icon: 'pi pi-chart-line' },
     // { label: 'X-Ray', route: '/xray', icon: 'pi pi-bolt' },
     // { label: 'Security Lab', route: '/security-lab', icon: 'pi pi-shield' },
   ];

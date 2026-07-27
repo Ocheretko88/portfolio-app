@@ -45,3 +45,6 @@ Thumbs.db
 
 # Auto-generated build version stamp (regenerated on install/serve/build)
 /src/environments/version.ts
+
+# personal training data — kept local, not committed
+docs/build/fixtures/
