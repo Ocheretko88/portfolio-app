@@ -86,17 +86,17 @@ pre-expand far-future work.
 - **Acceptance:** returns seeded catalog; filters work; feature test; envelope; BE-CHECK.
 - **Evaluator focus:** layering + Form Request validation + Resource shape.
 
-### P1-2 · POST /gym/sessions — `READY`
+### P1-2 · POST /gym/sessions — `DONE`
 - **Scope:** create session + nested set entries; validation; `is_pr` + `personal_records` computed in service; **`cycle_day` accepted**.
 - **Acceptance:** valid payload persists session+sets; PR detection correct on a fixture; invalid payload → 422 in the standard error shape; feature test; BE-CHECK.
 - **Evaluator focus:** PR/volume computed server-side; grams stored; no logic in controller.
 
-### P1-3 · GET /gym/sessions (list + detail) — `BLOCKED` (P1-2)
+### P1-3 · GET /gym/sessions (list + detail) — `READY`
 - **Scope:** paginated list (date-range filter) + `GET /{id}`.
 - **Acceptance:** pagination + range filter tested; envelope; BE-CHECK.
 - **Evaluator focus:** N+1 avoided (eager load); Resource shape stable.
 
-### P1-4 · GET /gym/stats/overview — `BLOCKED` (P1-2)
+### P1-4 · GET /gym/stats/overview — `READY`
 - **Scope:** aggregates — total volume (all-time + this week + delta), PR count, streak, weekly frequency — **in SQL**.
 - **Acceptance:** numbers verified against a known fixture session set; computed via SQL not PHP loops; test; BE-CHECK.
 - **Evaluator focus:** SQL aggregation; `SUM(reps*weight_grams)` correct; timezone-safe week bucketing.

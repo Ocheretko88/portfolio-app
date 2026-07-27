@@ -17,6 +17,47 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-2 — POST /gym/sessions            2026-07-27
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-api feat(gym): add POST /gym/sessions with server-side PR detection [P1-2] (pending user push)
+What changed: `App\Contracts\{SessionRepository,PersonalRecordRepository}` +
+`App\Repositories\Eloquent{Session,PersonalRecord}Repository` +
+`App\Services\SessionService` (persists a session + set entries in one
+transaction, then computes PRs) + `App\Http\Requests\Gym\CreateSessionRequest`
+(validates against the P0-7 `CreateSessionRequest` schema; `id`/`isPr` never
+accepted from the client) + `App\Http\Resources\Gym\{SetEntry,WorkoutSession}
+Resource` (camelCase, matching the OpenAPI schemas exactly) + the
+`createSession` controller action + 2 new provider binds + the route.
+PR types (all per-exercise, non-warmup sets only): `max_weight`, `max_reps`,
+`est_1rm` (Epley, rounded to nearest gram) are set-level — the winning
+`SetEntry` gets `is_pr=true`; `max_volume` is a session-aggregate
+(Σ reps×weight_grams across the session's sets for that exercise) and isn't
+tied to one set (`set_entry_id` null). Historical-best lookups are `MAX(value)`
+SQL aggregates in the repository, not PHP loops over stored history — only the
+handful of sets in the current request are compared in PHP.
+Criteria: all MET — valid payload persists session+sets (verified via
+`assertDatabaseHas`); PR detection verified against a hand-computed fixture
+(Epley 70000×(1+6/30)=84000, volume 8×60000+6×70000+10×50000=1,400,000, both
+independently re-derived by the evaluator); a weaker follow-up session creates
+zero new records; warmup sets never considered; 422s use the real
+`{error:{code,message,details}}` envelope (unknown exerciseId, negative
+weight, missing required fields); Feature + Service + 2 Repository integration
+tests, all against real Postgres 16.
+Checks: `php artisan test` 48/48 (full suite); `pint --test` clean.
+Notes / decisions: Found and fixed a real bug mid-cycle — `$setData + ['set_number' => ...]`
+(array-union) doesn't fill in a key that already exists with value `null`
+(only genuinely-missing keys), so the Form Request's always-present
+`set_number` key silently defeated the fallback and inserts hit a NOT NULL
+violation. Fixed to `??=`. Evaluator independently confirmed the fix and found
+no sibling instances of the same bug elsewhere in the request-shaping code.
+Risk notes carried forward (non-blocking): PR detection runs outside the
+session-creation DB transaction — a later failure there could leave a
+committed session with partial/missing PR rows (self-healing for set-level
+types on the next session; `max_volume` history would have a permanent gap).
+Any future bulk/import session-creation path (Phase 3 importer) would bypass
+PR detection entirely unless it's explicitly wired through `SessionService`
+too — worth flagging when that step lands.
+
 ## P1-1 — GET /gym/exercises            2026-07-27
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-api feat(gym): add GET /gym/exercises endpoint [P1-1] (pending user push)
