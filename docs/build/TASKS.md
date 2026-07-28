@@ -231,6 +231,19 @@ Not verifiable from the audit sandbox — open items for you:
 - **Goal:** a hook can be skipped with `--no-verify`; CI is the copy nobody can bypass, so the invariants that matter are asserted there too — contract-type drift, and a repo-wide sweep for focused/skipped tests, `debugger`, and the banned Angular idioms.
 - **Remaining:** mirror the drift/invariant job in the api workflow, and turn on branch protection for `main` in both repos (require PR + green CI). Branch protection is a GitHub settings change only you can make — without it, every layer above is advisory.
 
+### H-10 · Environment checks in the hooks — `DONE`
+- **Scope:** `portfolio-app/.nvmrc`, `package.json` (`engines`), `.githooks/_lib.sh` (`load_nvm`, `ensure_node`), both `pre-push` hooks, app `pre-commit`.
+- **Why:** the first real push after H-7 failed with a `yargs-parser` stack trace, because the shell was on Node 18 and Angular 21 needs ≥20.19 — and the api push failed with 63 red tests, because no Postgres was listening. Neither was a code problem, but the hook reported both as "typecheck failed" / "tests failed". **A check that cannot run is not a check that failed, and reporting the two the same way is exactly what teaches people to reach for `--no-verify`.**
+- **What:** Node 22 pinned in `.nvmrc` and stated in `engines`; the hooks source nvm themselves (git hooks run in a non-interactive shell where it is otherwise absent) and honour `.nvmrc`; `pre-push` verifies the Node version and, on the api, that something is actually listening on the `phpunit.xml` database host/port — each failing with the environment named and the exact fix printed.
+- **Verified:** simulated Node 18 → the environment message, not a stack trace; Postgres stopped → the database message; Postgres started → full suite runs and the push passes.
+
+### H-11 · Disposable test database — `DONE`
+- **Scope:** `portfolio-api/compose.yaml`, `composer.json` (`test-db`, `test-db:stop`), `.githooks/pre-push` message, `.githooks/README.md`.
+- **Why:** the real data lives in Neon and `.env` points there, but the suite runs `RefreshDatabase`/`migrate:fresh` — aimed at Neon that would **drop and recreate the training history**. `phpunit.xml` already blanks `DB_URL` and pins `127.0.0.1`; this gives that pin something to connect to, in the repo rather than in someone's shell history.
+- **What:** one service, `postgres:16-alpine`, credentials matching `phpunit.xml`, bound to **loopback only**, storage on a **RAM disk** with `fsync`/`synchronous_commit`/`full_page_writes` off — the database cannot outlive the container, no state leaks between runs, and the suite runs faster. `composer run-script test-db` starts it and waits for the healthcheck.
+- **Acceptance:** `docker compose config` validates; `composer run-script test-db && php artisan test` is green from cold; the `pre-push` environment message names this command.
+- **Note:** check the api CI's Postgres service version matches `postgres:16` — a driver difference between local and CI is the kind of thing that only shows up in a window-function query.
+
 ### H-6 · Reconcile the spec with the code — `READY` (no deps)
 - **Scope:** `portfolio-app/docs/gym-tracker-architecture.md` (§2 diagram, §4 intro), new ADR.
 - **Goal:** the spec still says gym code lives in `app/Domain/Gym/`; it lives in the repo's flat layering (see the P0-3 correction). Update the two references and record the placement decision as an ADR so the next executor doesn't "fix" the code toward a stale doc.

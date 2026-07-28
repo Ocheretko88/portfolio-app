@@ -75,6 +75,58 @@ grep_staged() {
   done
 }
 
+# ── Environment ─────────────────────────────────────────────────────────────
+# A check that cannot run is not a check that failed, and reporting the two the
+# same way is how people end up reaching for --no-verify. These helpers make the
+# difference explicit and always print the exact fix.
+
+# Git hooks run in a non-interactive shell, so nvm is not loaded even when the
+# terminal that invoked them had it. Load it, then honour .nvmrc.
+load_nvm() {
+  command -v nvm >/dev/null 2>&1 && return 0
+  for candidate in "${NVM_DIR:-$HOME/.nvm}/nvm.sh" /opt/homebrew/opt/nvm/nvm.sh /usr/local/opt/nvm/nvm.sh; do
+    if [ -s "$candidate" ]; then
+      # shellcheck source=/dev/null
+      . "$candidate" >/dev/null 2>&1
+      break
+    fi
+  done
+  command -v nvm >/dev/null 2>&1
+}
+
+# Fails the hook — with the fix, not a stack trace — when Node is too old to run
+# the toolchain. Angular 21 needs ^20.19 || ^22.12 || >=24.
+ensure_node() {
+  if [ -f .nvmrc ] && load_nvm; then
+    nvm use --silent >/dev/null 2>&1 || nvm use "$(cat .nvmrc)" --silent >/dev/null 2>&1
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    fail "Node is not on PATH — cannot verify anything." \
+      "Install Node $( [ -f .nvmrc ] && cat .nvmrc || echo 22 ), or run: nvm use"
+    return 1
+  fi
+
+  v=$(node -v | sed 's/^v//')
+  major=${v%%.*}; rest=${v#*.}; minor=${rest%%.*}
+  ok=0
+  case "$major" in
+    20) [ "$minor" -ge 19 ] && ok=1 ;;
+    22) [ "$minor" -ge 12 ] && ok=1 ;;
+    2[4-9]|[3-9][0-9]) ok=1 ;;
+  esac
+
+  if [ "$ok" -ne 1 ]; then
+    fail "Node v$v is too old for this toolchain — the checks cannot run." \
+      "This is an environment problem, not a problem with your code." \
+      "Fix:  nvm use 22        (nvm install 22, the first time)" \
+      "      .nvmrc pins 22; package.json 'engines' states the same range." \
+      "Angular 21 requires ^20.19 || ^22.12 || >=24. CI runs 22."
+    return 1
+  fi
+  return 0
+}
+
 # Exit with the right code and a uniform "how to get out of jail" message,
 # worded for whichever hook is calling.
 finish() {

@@ -23,6 +23,9 @@ while read -r _local_ref local_sha _remote_ref _remote_sha; do
 done
 [ "$PUSHING_SOMETHING" -eq 0 ] && exit 0
 
+# Environment first: distinguish "cannot verify" from "verification failed".
+ensure_node || finish
+
 if [ ! -d node_modules ]; then
   fail "node_modules is missing — cannot verify this push." "Run: npm ci"
   finish

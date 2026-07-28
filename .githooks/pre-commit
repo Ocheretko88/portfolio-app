@@ -26,7 +26,7 @@ fi
 # trusting that, regenerate and compare — this also catches a stale contract.ts
 # staged alongside an edited openapi.yaml.
 if staged_files | grep -qE "^(${CONTRACT//\//\\/}|src/app/core/api/openapi\.yaml)$"; then
-  if [ -d node_modules ]; then
+  if [ -d node_modules ] && ensure_node; then
     npm run --silent api:types >/dev/null 2>&1
     if ! git diff --quiet -- "$CONTRACT"; then
       fail "$CONTRACT does not match what 'npm run api:types' produces." \
@@ -85,7 +85,7 @@ if [ -n "$TS_HTML" ]; then
 fi
 
 # ── 7. Formatting ────────────────────────────────────────────────────────────
-if [ -n "$TS_HTML_CSS" ] && [ -d node_modules ]; then
+if [ -n "$TS_HTML_CSS" ] && [ -d node_modules ] && ensure_node; then
   # shellcheck disable=SC2086
   if ! npx --no-install prettier --check $TS_HTML_CSS >/dev/null 2>&1; then
     fail "Staged files are not Prettier-formatted." \

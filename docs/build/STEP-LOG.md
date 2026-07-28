@@ -17,6 +17,72 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-11 — Disposable test database            2026-07-28
+Executor: Claude (Opus, cloud session)   Evaluator: n/a (config, statically validated)   Verdict: PASS
+Commit: portfolio-api `test(gym): add a disposable Postgres for the suite [H-11]`
+What changed: `compose.yaml` with exactly one service — a throwaway Postgres for
+`php artisan test` — plus `composer run-script test-db` / `test-db:stop`, and the
+`pre-push` environment message now names that command instead of a long
+`docker run` line.
+Why it matters more than it looks: `.env` points at **Neon**, where the real
+training history lives, and the suite runs `RefreshDatabase`/`migrate:fresh` —
+which drops and recreates every table it touches. Aimed at Neon, running the
+tests would delete the athlete's data. `phpunit.xml` already defends against
+this by blanking `DB_URL` and pinning `127.0.0.1:5432`; until now that pin
+simply had nothing behind it, which is why the first real push produced 63 red
+tests. The compose file gives the pin something to connect to, and puts the
+port and credentials in the repo instead of in someone's shell history.
+Design notes: storage is a **tmpfs**, so the database cannot outlive the
+container and no state leaks between runs; `fsync`, `synchronous_commit` and
+`full_page_writes` are all off, which is safe precisely because nothing here is
+worth surviving a crash, and it makes the suite faster. The port is bound to
+`127.0.0.1` explicitly rather than `0.0.0.0` — nothing on the local network
+should be able to reach it. Credentials match `phpunit.xml` and are deliberately
+not secrets.
+Checks: `docker compose config` validates against the compose schema;
+`composer validate` clean; `bash -n` clean on the edited hook.
+Follow-up: confirm the api CI's Postgres service is also 16 — a version skew
+between local and CI is exactly the kind of thing that surfaces first in a
+window-function or `date_trunc` query, i.e. in the stats endpoints.
+
+---
+## H-10 — Environment checks in the hooks            2026-07-28
+Executor: Claude (Opus, cloud session)   Evaluator: n/a (fix to H-7, verified by simulation)   Verdict: PASS
+Commits: portfolio-app `ci(hooks): report environment problems as environment
+problems [H-10]` · portfolio-api `ci(hooks): detect an unreachable database
+before the suite [H-10]`
+What prompted it: the first real `git push` after H-7 landed failed on both
+repos, and in both cases the hook was right to block but wrong about why. The
+app printed "typecheck failed" plus a `yargs-parser` stack trace — the actual
+cause was a shell on Node 18.20.8 against an Angular 21 toolchain that needs
+≥20.19. The api printed "tests failed — 63 failed, 14 passed" — the actual cause
+was nothing listening on 127.0.0.1:5432. **A check that cannot run is not a
+check that failed. Conflating the two is precisely what trains someone to reach
+for `--no-verify`, which would have undone the whole point of H-7/H-8.**
+What changed: `.nvmrc` pins Node 22 (matching CI) and `package.json` gained
+`engines: ^20.19.0 || ^22.12.0 || >=24.0.0`, so `npm ci` now says something
+useful instead of leaving it to a transitive dependency's stack trace. A new
+`load_nvm`/`ensure_node` pair in `_lib.sh` sources nvm from the usual locations
+— git hooks run in a **non-interactive** shell, so nvm is absent even when the
+terminal that invoked them had it — then honours `.nvmrc` and range-checks the
+running version. `pre-push` calls it before any gate; app `pre-commit` calls it
+only where a gate actually needs npm, so a stale Node still cannot block a
+docs-only commit. The api `pre-push` reads the host/port straight out of
+`phpunit.xml` and opens a TCP probe before running anything, so an absent
+database is reported as an absent database, with both the docker and homebrew
+one-liners printed.
+Checks: simulated Node 18 on PATH → the environment message and the `nvm use 22`
+fix, no stack trace; Postgres stopped → the database message; Postgres started →
+pint + the full 77-test suite run and the push passes. Both hooks `bash -n`
+clean; app FE-CHECK green.
+Notes: the api `pre-push` deliberately keeps its "phpunit.xml no longer pins
+pgsql" warning as well — the port probe proves *a* database is reachable, not
+that it is the right kind, and the stats queries need real Postgres to mean
+anything. Also worth recording: `commit-msg` rejected this step's own first
+commit message at 73 characters. Mildly annoying, exactly correct, and the
+cheapest possible proof the gates apply to their author too.
+
+---
 ## H-7 / H-8 / H-9 — Three-layer guardrails            2026-07-28
 Executor: Claude (Opus, cloud session)   Evaluator: adversarial self-review (see note)   Verdict: PASS
 Commits: portfolio-app + portfolio-api `ci(hooks): …`
