@@ -31,7 +31,7 @@ app `HEAD` matches `origin/main`, so nothing is stranded locally.
 | `npm run typecheck` | clean |
 | `npm test` | **28 passed** (6 files) |
 | `npm run format:check` | clean |
-| `npm run build` | fails **only** on the Google Fonts inline → H-2 |
+| `npm run build` | fails **only** on the Google Fonts inline → fixed by H-2 |
 | `npm run api:types` | regenerates, then leaves a **dirty tree** → fixed by H-1 |
 
 **Verdict:** P0-1…P1-6 are genuinely done — the backend slice is real, layered,
@@ -186,7 +186,7 @@ Not verifiable from the audit sandbox — open items for you:
 - **Acceptance:** on a clean checkout, `npm run api:types` → `git status` reports **no** modified files; `npm run format:check` still clean.
 - **Verify:** `TYPES` then `git status --short` (must be empty) · **Evaluator focus:** the gate is now honest; no generated file hand-edited.
 
-### H-2 · Self-host the web fonts — `READY` (no deps)
+### H-2 · Self-host the web fonts — `DONE`
 - **Scope:** `portfolio-app/src/styles.css`, `public/fonts/**` (or an `@fontsource` dev-dep), `index.html`.
 - **Problem:** `styles.css` `@import`s Inter + JetBrains Mono from `fonts.googleapis.com`, and Angular's font-inlining plugin fetches that URL **at build time**. Any environment without an outbound route to Google (this audit sandbox, every prior build sandbox, an offline laptop, a locked-down CI runner) fails `npm run build` with a 403 — which is why *every* step since P0-7 recorded "build fails, known sandbox issue". The build gate is effectively unverified outside GitHub Actions.
 - **Goal:** ship the two families from the app's own origin so the production build is hermetic.

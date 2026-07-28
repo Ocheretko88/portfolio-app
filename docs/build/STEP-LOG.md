@@ -17,6 +17,63 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-2 — Self-host the web fonts            2026-07-28
+Executor: Claude (Opus, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS (after one FAIL cycle)
+Commit: portfolio-app `fix(build): self-host Inter and JetBrains Mono [H-2]`
+What changed: the Google Fonts `@import` in `src/styles.css` — which Angular's
+font-inlining step fetches at **build** time — is replaced by eight hand-written
+`@font-face` blocks pointing at `public/fonts/`. Shipped: the upstream variable
+fonts from `@fontsource-variable/inter@5.3.0` and
+`@fontsource-variable/jetbrains-mono@5.3.0`, `wght` axis, normal style, subsets
+latin · latin-ext · cyrillic · cyrillic-ext, plus both SIL OFL licences.
+`index.html` loses the two Google `preconnect`s and gains `preload` for only the
+two Latin cuts. `vercel.json` gets a `/fonts/(.*)` immutable cache rule.
+Criteria: all MET — no Google reference remains anywhere in `src/`; `npm run
+build` succeeds **with no network**; light and dark render identically; licences
+shipped; size delta recorded below.
+Checks: FE-CHECK green in a sandbox with confirmed-blocked access to
+fonts.googleapis.com (curl → 403), i.e. the exact condition that has been
+failing since P0-7: `format:check` clean · `typecheck` clean · `npm test` 28/28 ·
+`npm run build` **succeeds** (Initial total 295.57 kB raw / 81.02 kB transfer).
+Runtime proof in headless Chromium against the built output, both themes: only
+`/fonts/inter-latin-*` and `/fonts/jetbrains-mono-latin-*` are fetched (plus the
+pre-existing primeicons), zero Google requests, no preload double-fetch, and the
+unicode-range-gated Cyrillic cuts correctly stay lazy on a Latin page.
+Bundle-size delta (vs a HEAD build with the `@import` stripped — the only
+baseline buildable offline): Initial total 293.29 → 295.57 kB raw
+(+2.3 kB, +0.8%), 80.66 → 81.02 kB transfer; `styles-*.css` +2,374 B raw
+(+391 B gzip); `index.html` +2,697 B (critical-CSS inlining of the `@font-face`
+blocks). New same-origin font payload 250.75 kB on disk, of which a Latin
+visitor fetches 86.58 kB (2 files) on first paint — replacing the equivalent
+cross-origin fetches from gstatic, and dropping two third-party DNS+TLS
+handshakes. Well inside the 500 kB warning budget.
+Notes / decisions: **the files are vendored into `public/fonts/` rather than
+added as an `@fontsource-variable` dependency** — the step allowed either, and
+vendoring was chosen because the machine this repo lives on has no network in
+this session and could not run `npm install`; it also keeps the build free of a
+runtime dep for assets that change roughly never. The trade-off is manual
+upgrades and ~250 kB of binaries in git. Family names stay `'Inter'` /
+`'JetBrains Mono'` so the `--font-*` design tokens are untouched — the diff
+cannot regress typography elsewhere. Cyrillic is shipped deliberately (the
+training log is Ukrainian-first); Greek and Vietnamese, which Google served on
+demand, are **not** — note it before any Greek/Vietnamese string ships.
+First evaluator pass FAILed on one criterion — "bundle-size delta recorded in
+the STEP-LOG" — which this entry now satisfies; the engineering itself passed.
+Three of its risk notes were fixed on the spot rather than deferred:
+`format('woff2-variations')` → plain `format('woff2')` (the former is a dropped
+CSS Fonts 4 draft hint), the preload hrefs made absolute to match the CSS URLs
+(they would have diverged under a sub-path `baseHref`), and the missing
+`/fonts/` cache header added to `vercel.json` — without it the unhashed font
+filenames inherited Vercel's revalidate default, a repeat-visit regression
+against Google's 1-year CDN cache. The evaluator independently verified that
+all eight woff2 are sha256-identical to the upstream packages, that every
+`unicode-range` is character-for-character upstream's, that Ukrainian
+Є/є І/і Ї/ї Ґ/ґ are present in the shipped Cyrillic subsets and covered by a
+declared range, and that real variable-weight interpolation happens at
+400/500/600/700 (Inter advance widths 480.78 → 496.61 px; JetBrains Mono, being
+monospace, verified by monotonic ink density instead).
+
+---
 ## H-1 — Make `npm run api:types` leave a clean tree            2026-07-28
 Executor: Claude (Opus, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-app `fix(build): format generated contract types so api:types leaves a clean tree [H-1]`
