@@ -1,0 +1,151 @@
+<section id="gym-history" class="section container">
+  <h1 class="section-title">History</h1>
+  <p class="text-muted">Every logged session, most recent first. Pick one to see its sets.</p>
+
+  @if (!hasLoadedOnce() && store.sessionsError(); as error) {
+    <!--
+      First-ever load failed: nothing to show yet, so this replaces the whole
+      area. `GymStore.loadSessions()` deliberately leaves `sessionsError` set
+      while a retry is in flight (only clearing it on success), so this same
+      block — and the Retry button inside it — stays mounted for the whole
+      retry round-trip instead of being torn down the instant the button is
+      clicked, which would blur focus to <body> mid-click.
+    -->
+    <div
+      class="history-state history-state--error"
+      role="alert"
+      [attr.aria-busy]="store.sessionsLoading()"
+    >
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--ghost" (click)="retry()">Retry</button>
+    </div>
+  } @else if (!hasLoadedOnce()) {
+    <!-- First-ever load in flight: no list/pagination exists yet to preserve. -->
+    <p class="history-state" role="status">Loading sessions…</p>
+  } @else {
+    <!--
+      A page has loaded successfully at least once: the list (or the empty
+      message, if the page really is empty) stays mounted from here on, even
+      while a later page-change or retry is in flight or fails — tearing it
+      down would drop keyboard focus off whatever was just pressed and
+      destroy+recreate the "Page X of Y" live region instead of updating it
+      in place. A later failure renders as its own inline alert alongside
+      whatever's already on screen (list or empty message) rather than
+      silently looking like "no sessions" (P1-7 review findings).
+    -->
+    @if (store.sessions().length > 0) {
+      <ol class="sessions" [attr.aria-busy]="store.sessionsLoading()">
+        @for (session of store.sessions(); track session.id) {
+          <li class="session" [class.session--open]="isOpen(session.id)">
+            <button
+              type="button"
+              class="session__head"
+              [attr.aria-expanded]="isOpen(session.id)"
+              [attr.aria-controls]="'session-panel-' + session.id"
+              (click)="toggle(session.id)"
+            >
+              <span class="session__head-main">
+                <span class="session__title">{{ session.title || 'Workout' }}</span>
+                <span class="session__subtitle text-mono">{{ sessionSubtitle(session) }}</span>
+              </span>
+              <span class="session__volume text-mono">{{ volume(session) }}</span>
+              <i class="pi pi-chevron-down session__chevron" aria-hidden="true"></i>
+            </button>
+
+            @if (isOpen(session.id)) {
+              <div class="session__panel" [id]="'session-panel-' + session.id">
+                @if (session.notes) {
+                  <p class="session__notes">{{ session.notes }}</p>
+                }
+
+                <table class="session__sets">
+                  <caption class="visually-hidden">
+                    Sets logged for
+                    {{
+                      session.title || 'this workout'
+                    }}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Exercise</th>
+                      <th scope="col">Set</th>
+                      <th scope="col">Weight</th>
+                      <th scope="col">Reps</th>
+                      <th scope="col">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (set of session.sets; track set.id) {
+                      <tr
+                        [class.session__set--pr]="set.isPr"
+                        [class.session__set--warmup]="set.isWarmup"
+                      >
+                        <td>
+                          {{ exerciseName(set.exerciseId) }}
+                          @if (set.isPr) {
+                            <span class="chip session__pr-chip">PR</span>
+                          }
+                        </td>
+                        <td>{{ set.setNumber }}</td>
+                        <td>{{ weight(set.weightGrams) }}{{ set.perSide ? ' (per side)' : '' }}</td>
+                        <td>{{ set.reps ?? '—' }}</td>
+                        <td>{{ set.notes || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    } @else {
+      <div class="history-state" role="status">
+        <p>No sessions logged yet.</p>
+        <a class="btn" routerLink="/gym/log">Log your first workout</a>
+      </div>
+    }
+
+    @if (store.sessionsError(); as refetchError) {
+      <!--
+        Same reasoning as the first-load error above: `sessionsError` stays
+        set for the whole retry round-trip (see GymStore.loadSessions), so
+        this block — and the Retry button in it — isn't unmounted the
+        instant it's clicked.
+      -->
+      <div
+        class="history-state history-state--error history-state--inline"
+        role="alert"
+        [attr.aria-busy]="store.sessionsLoading()"
+      >
+        <p>{{ refetchError }}</p>
+        <button type="button" class="btn btn--ghost" (click)="retry()">Retry</button>
+      </div>
+    }
+
+    @if (store.sessions().length > 0) {
+      <nav class="history-pagination" aria-label="Session history pages">
+        <button
+          type="button"
+          class="btn btn--ghost"
+          [attr.aria-disabled]="page() <= 1 || store.sessionsLoading() ? 'true' : null"
+          (click)="prevPage()"
+        >
+          Previous
+        </button>
+        <span class="history-pagination__status text-mono" role="status">
+          {{ store.sessionsLoading() ? 'Loading…' : '' }}
+          Page {{ displayedPage() }} of {{ totalPages() }} · {{ totalSessions() }} sessions
+        </span>
+        <button
+          type="button"
+          class="btn btn--ghost"
+          [attr.aria-disabled]="page() >= totalPages() || store.sessionsLoading() ? 'true' : null"
+          (click)="nextPage()"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  }
+</section>

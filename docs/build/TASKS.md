@@ -146,7 +146,7 @@ Not verifiable from the audit sandbox — open items for you:
 - **Acceptance:** logs a session in a few interactions; keyboard-only operable; AXE clean; component test; FE-CHECK.
 - **Evaluator focus:** everything-selectable rule; Reactive forms; a11y; matches spec §6.1.
 
-### P1-7 · History list + detail — `READY` (P1-5, P1-3)
+### P1-7 · History list + detail — `DONE` (P1-5, P1-3)
 - **Scope:** `features/gym/history/*` — session list + detail view; `core/state/gym.store.ts` + `core/api/api-client.ts` as needed for the two additions below.
 - **Acceptance:** shows real logged sessions incl. cycle-day + notes; a11y; test; FE-CHECK.
 - **Added 2026-07-28 (found in audit, both blocking a correct list view):**

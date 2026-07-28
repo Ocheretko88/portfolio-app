@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
+import { type Observable, map } from 'rxjs';
 import { ApiClient } from './api-client';
 import type {
   CreateSessionRequestDto,
   ExerciseDto,
   ListExercisesQuery,
   ListSessionsQuery,
+  PaginationMetaDto,
   StatsOverviewDto,
   WorkoutSessionDto,
 } from './api-types';
@@ -65,12 +66,19 @@ export class GymApi {
 
   /**
    * Workout sessions, newest-first, optionally date-ranged and paginated
-   * (P1-3). The `PaginationMeta` (page/perPage/total/totalPages) isn't
-   * surfaced yet — `ApiClient` unwraps only `data` — history (P1-7) adds
-   * pagination controls when it needs those numbers.
+   * (P1-3), with the `PaginationMeta` the server returns
+   * (page/perPage/total/totalPages) surfaced alongside the rows via
+   * `ApiClient.getWithMeta` — history (P1-7) drives real pagination controls
+   * with these numbers instead of re-deriving a page count client-side.
    */
-  sessions(params: ListSessionsParams = {}): Observable<WorkoutSessionDto[]> {
-    return this.api.get<WorkoutSessionDto[]>(`/api/v1/gym/sessions${toQueryString(params)}`);
+  sessionsPage(
+    params: ListSessionsParams = {},
+  ): Observable<{ sessions: WorkoutSessionDto[]; meta: PaginationMetaDto }> {
+    return this.api
+      .getWithMeta<WorkoutSessionDto[], PaginationMetaDto>(
+        `/api/v1/gym/sessions${toQueryString(params)}`,
+      )
+      .pipe(map((envelope) => ({ sessions: envelope.data, meta: envelope.meta })));
   }
 
   /** Dashboard aggregates — volume, PRs, streak, frequency (P1-4). */

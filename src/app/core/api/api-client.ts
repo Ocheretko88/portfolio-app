@@ -4,9 +4,14 @@ import { type Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { Schemas } from './api-types';
 
-interface Envelope<T> {
+/**
+ * Generic over the `meta` shape so a paginated endpoint (`PaginationMeta`) and
+ * a plain one (`Meta`) can both be described by the same envelope — defaults
+ * to `Meta` so every existing call site is unaffected.
+ */
+export interface Envelope<T, M = Schemas['Meta']> {
   readonly data: T;
-  readonly meta: Schemas['Meta'];
+  readonly meta: M;
 }
 
 /**
@@ -25,6 +30,16 @@ export class ApiClient {
 
   post<T>(path: string, body: unknown): Observable<T> {
     return this.http.post<Envelope<T>>(this.url(path), body).pipe(map((res) => res.data));
+  }
+
+  /**
+   * Same GET as `get()`, but returns the full envelope instead of unwrapping
+   * it — for endpoints whose `meta` carries more than `{version,
+   * generatedAt}` (e.g. `PaginationMeta`) and whose caller needs those extra
+   * fields rather than just `data` (P1-7: history's pagination controls).
+   */
+  getWithMeta<T, M = Schemas['Meta']>(path: string): Observable<Envelope<T, M>> {
+    return this.http.get<Envelope<T, M>>(this.url(path));
   }
 
   private url(path: string): string {

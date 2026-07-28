@@ -3,7 +3,8 @@ import { Routes } from '@angular/router';
 /**
  * GymTracker feature routes (ADR-0005), lazy-loaded from the app shell so the
  * gym never weighs on the initial CV bundle. `log` is the Phase-1 logging
- * form (P1-6); history / programs / coach routes follow as the slice fills in.
+ * form (P1-6); `history` is the session list + detail view (P1-7); programs /
+ * coach routes follow as the slice fills in.
  */
 export const GYM_ROUTES: Routes = [
   {
@@ -15,5 +16,10 @@ export const GYM_ROUTES: Routes = [
     path: 'log',
     loadComponent: () => import('./log/log-form').then((m) => m.GymLogForm),
     title: 'GymTracker — Log a workout',
+  },
+  {
+    path: 'history',
+    loadComponent: () => import('./history/history').then((m) => m.GymHistory),
+    title: 'GymTracker — History',
   },
 ];

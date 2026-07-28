@@ -1,0 +1,150 @@
+.history-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-s);
+  margin-top: 1.6rem;
+  padding: var(--space-s);
+  background: var(--surface-1);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+}
+.history-state--error {
+  color: var(--text-strong);
+}
+.history-state--inline {
+  margin-top: var(--space-s);
+}
+
+.sessions {
+  list-style: none;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  background: var(--surface-1);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.session {
+  border-top: var(--border-w) solid var(--border);
+}
+.session:first-child {
+  border-top: none;
+}
+
+.session__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.session__head:hover {
+  background: var(--surface-2);
+}
+
+.session__head-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.session__title {
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.session__subtitle {
+  font-size: var(--step--1);
+  color: var(--text-muted);
+}
+.session__volume {
+  color: var(--brand);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.session__chevron {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: transform var(--transition);
+}
+.session--open .session__chevron {
+  transform: rotate(180deg);
+}
+
+.session__panel {
+  padding: 0 var(--space-s) var(--space-s);
+}
+
+.session__notes {
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-s);
+}
+
+.session__sets {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+.session__sets th,
+.session__sets td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: var(--border-w) solid var(--border);
+}
+.session__sets th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+.session__set--pr {
+  color: var(--text-strong);
+}
+.session__set--warmup {
+  color: var(--text-muted);
+}
+.session__pr-chip {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-s);
+  margin-top: var(--space-s);
+}
+.history-pagination__status {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+
+/*
+ * `aria-disabled` (not the native `disabled` attribute) on the Prev/Next
+ * buttons — see history.ts `nextPage()`/`prevPage()`, which already no-op at
+ * the bounds and while loading. A natively `disabled` button is unfocusable
+ * and browsers blur it immediately, which is exactly what threw keyboard
+ * focus to <body> on every page change before this fix; `aria-disabled`
+ * keeps the button focusable and announced as disabled instead (P1-7 review).
+ */
+.history-pagination button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.history-pagination button[aria-disabled='true']:hover {
+  transform: none;
+  box-shadow: none;
+  background: transparent;
+}

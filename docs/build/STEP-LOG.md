@@ -17,6 +17,59 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-7 — History list + detail            2026-07-28
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent, 4 rounds)   Verdict: PASS
+Commit: feat(gym): add session history list + detail [P1-7]
+What changed: `features/gym/history/{history.ts,html,css,spec.ts}` — an
+accordion-style master/detail list (same expand/collapse idiom as
+`Experience`), driven entirely by `GymStore.sessions()` (the list endpoint
+already returns each session's nested `sets`, so no second request is needed
+for detail). Reachable at the new `history` route in `gym.routes.ts`. Fixes
+the two audit-flagged gaps: `ApiClient.getWithMeta<T,M>()` (a generic,
+default-preserving overload of `get()`) + `GymApi.sessionsPage()` surface the
+server's `PaginationMeta` so real Prev/Next controls are driven by
+`sessionsMeta().totalPages/total`, never a client-derived count; `GymStore`
+gained `sessionsMeta`/`sessionsError`, with `loadSessions()` leaving prior
+`sessions`/`sessionsMeta` untouched on failure and setting `sessionsError`
+instead, so a failed refetch is visibly distinct from an empty history.
+Criteria: all MET — logged sessions incl. cycle-day + notes render and expand
+to full set detail; pagination meta drives the controls (asserted against a
+meta whose `totalPages` is deliberately inconsistent with a naive
+`total/perPage`); loading/empty/error are three distinct states with a working
+inline retry, both paths asserted; FE-CHECK green (7 files, 36 tests).
+Checks: `npm run typecheck` clean; `npm test` 36/36; `npm run format:check`
+clean; `npm run build` succeeds (new `history` lazy chunk, 9.6 kB). Run
+against a clean `npm ci` of the exact committed tree in a separate Linux
+container — the on-device sandbox has a stale `@esbuild/darwin-arm64` binary
+(no `@esbuild/linux-arm64`, no network to fetch it) and cannot run `ng
+build`/`ng test` at all; this is an environment limitation of that sandbox,
+not of the code.
+Notes / decisions: two files outside the literal Scope line were touched and
+accepted by the evaluator across all four passes as minimal/necessary rather
+than scope creep — `core/api/gym-api.ts` (adds `sessionsPage()`; keeps
+`GymStore` going through the existing Store→Api→Client seam instead of
+calling `ApiClient` directly, which "Reuse before invent" would otherwise
+flag) and `features/gym/gym.routes.ts` (one route entry; without it the
+acceptance criterion "shows real logged sessions" has nothing to navigate to).
+The a11y pass took three rounds to actually hold: (1) an initial "loading"
+branch unmounted the whole list + pagination nav on every page change,
+throwing keyboard focus to `<body>` and destroying the "Page X of Y" live
+region; (2) the fix's native `[disabled]` on Prev/Next reproduced the same
+blur in real browsers (not in jsdom — the naive test was vacuous) and the
+branch order let a failed refetch render as a silent "No sessions logged
+yet."; (3) fixing those exposed that `GymStore` cleared `sessionsError` at
+the *start* of a retry, so the block containing the just-clicked Retry
+button vanished mid-click. Final shape: `sessionsError` clears only on
+success; both error blocks are template-stable siblings of the list/empty
+split; Prev/Next use `aria-disabled` (buttons stay focusable, their handlers
+already no-op at the bounds/while loading); the displayed page number reads
+`sessionsMeta().page` (confirmed) rather than the locally-requested `page()`
+signal, so a failed page change can't desync the live region from the rows
+actually on screen. H-3 (real axe-core assertions) is still a separate,
+open step — this step's a11y was judged by manual ARIA/focus/keyboard review,
+consistent with every prior UI step.
+
+---
 ## H-11 — Disposable test database            2026-07-28
 Executor: Claude (Opus, cloud session)   Evaluator: n/a (config, statically validated)   Verdict: PASS
 Commit: portfolio-api `test(gym): add a disposable Postgres for the suite [H-11]`
