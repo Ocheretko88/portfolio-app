@@ -17,6 +17,65 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## AUDIT — independent progress + plan review            2026-07-28
+Auditor: Claude (Opus, cloud session)   Verdict: n/a (not a build step)
+Commits reviewed: api `b2210a2`, app `b95d353` (app HEAD == origin/main)
+Scope: re-ran every gate from scratch against the committed code instead of
+trusting this log, then revised `TASKS.md`.
+Findings — checks re-run independently:
+- Backend: `php artisan test` **77 passed / 407 assertions** against a real
+  Postgres 16 (not SQLite), `pint --test` passed, `migrate:fresh` clean on an
+  empty DB, `ExerciseCatalogSeeder` idempotent over two runs with **72**
+  exercises. P0-2…P1-4 confirmed genuinely DONE; layering, Form Requests,
+  Resources, repository interfaces and SQL-side aggregation all as claimed.
+- Frontend: `typecheck` clean, `npm test` **28 passed** (6 files),
+  `format:check` clean. P0-8, P1-5, P1-6 confirmed DONE.
+- **`npm run build` is red for a real reason, not a sandbox quirk.** The
+  Google-Fonts `@import` is fetched *at build time* by Angular's font-inlining
+  plugin, so the build fails in any network-restricted environment — it has
+  only ever been verified on GitHub Actions. Waiving it once was fine; waiving
+  it in five consecutive STEP-LOG entries turned a DoD gate into a formality.
+  → new step **H-2** (self-host the fonts).
+- **`npm run api:types` cannot satisfy its own `TYPES` gate.** A fresh generate
+  rewrites all 1224 lines of `contract.ts` (generator emits double quotes, the
+  committed file is Prettier-formatted), so `git status` is never clean.
+  Verified the committed types are nonetheless *correct*: after
+  `prettier --write` the diff is empty. → new step **H-1** (chain the
+  formatter into the script).
+- **AXE is a hard gate with no tooling behind it.** `CONVENTIONS.md` and the
+  DoD both require it; the repo has no axe dependency, so every UI step passed
+  on manual review. → new step **H-3**.
+- **`POST /gym/sessions` is world-writable.** Spec §9 accepted obscurity for
+  *reads* on a personal MVP; it never accepted anonymous writes, and the route
+  carries only the default `throttle:api`. → new step **H-4** (shared-secret
+  header + tighter throttle, shaped like the Phase-3 `ResolveShareLink` so it
+  slots in later); its ADR also settles bigint-vs-UUID ids.
+- **`PATCH`/`DELETE /gym/sessions/{id}` are in spec §4 but were in no step.**
+  An oversight — P1-7's detail view has no way to correct a mistyped set.
+  → new step **H-5**, incl. PR recomputation on edit/delete.
+- **Spec/code path drift:** the architecture doc still says `app/Domain/Gym/`;
+  the code uses the repo's flat layering, which `CONVENTIONS.md` explicitly
+  allows and which is the better call (one layering story, not two). Accepted;
+  P0-3's scope line corrected in place → new doc step **H-6** + ADR.
+- **Two frontend gaps that block a correct P1-7:** `ApiClient` discards the
+  pagination `meta` the server already returns, and `GymStore`'s loaders
+  `catchError` to empty/null so a failed request is indistinguishable from "no
+  data". Both added to P1-7's acceptance criteria rather than left as notes.
+Plan changes applied to `TASKS.md`:
+- Added a **Verification snapshot** table at the top (dated, with the two open
+  items the audit sandbox cannot check: live Render+Neon behaviour, CI status).
+- Added **Phase 1.5 — Hardening** (H-1…H-6), all `READY`, ahead of Phase 2.
+- **Decomposed Phase 2** into nine atomic steps (P2-1…P2-9), backend-before-
+  frontend per chart, each UI step inheriting dataviz + the H-3 axe assertion.
+- P1-9 rewritten from "end-to-end pass" into a **deployment** gate (Neon
+  seeded, Render serving `/gym/*`, Vercel serving `/gym`, CI green both repos)
+  and re-blocked on H-1…H-5.
+- Backlog expanded with the deferrals buried in prior STEP-LOG entries ("same
+  as last workout", the non-combobox exercise search, notes tab order).
+Progress: **14 of 17** Phase-0+1 steps DONE. Remaining to a demo-able slice:
+P1-7, P1-8, then P1-9 behind the hardening steps.
+
+---
 ## P1-6 — Logging form            2026-07-28
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-app feat(gym): add the workout logging form [P1-6] (pending user push)
