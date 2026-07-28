@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { ApiClient } from './api-client';
 import type {
+  CreateSessionRequestDto,
   ExerciseDto,
   ListExercisesQuery,
   ListSessionsQuery,
@@ -75,5 +76,13 @@ export class GymApi {
   /** Dashboard aggregates — volume, PRs, streak, frequency (P1-4). */
   statsOverview(): Observable<StatsOverviewDto> {
     return this.api.get<StatsOverviewDto>('/api/v1/gym/stats/overview');
+  }
+
+  /**
+   * Logs a workout session with its set entries (P1-6). Returns the created
+   * session with server-computed PR flags — never client-supplied.
+   */
+  createSession(payload: CreateSessionRequestDto): Observable<WorkoutSessionDto> {
+    return this.api.post<WorkoutSessionDto>('/api/v1/gym/sessions', payload);
   }
 }

@@ -106,7 +106,7 @@ pre-expand far-future work.
 - **Acceptance:** store loads catalog + stats via generated types; unit test on a selector; FE-CHECK.
 - **Evaluator focus:** uses generated contract types; SignalStore shape matches ThemeStore idiom.
 
-### P1-6 · Logging form — `READY` (P1-5, P1-2)
+### P1-6 · Logging form — `DONE`
 - **Scope:** `features/gym/log/*` — Reactive form, fully selectable (exercise search-select, sets/reps/weight steppers, RPE/tempo/rest optional, unit toggle, cycle-day optional), "repeat last set", notes = only free text; submits → POST.
 - **Acceptance:** logs a session in a few interactions; keyboard-only operable; AXE clean; component test; FE-CHECK.
 - **Evaluator focus:** everything-selectable rule; Reactive forms; a11y; matches spec §6.1.

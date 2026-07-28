@@ -1,0 +1,222 @@
+<section id="gym-log" class="section container">
+  <h1 class="section-title">Log a workout</h1>
+  <p class="text-muted">
+    Pick your sets, adjust with the steppers, hit save. Notes are the only typing.
+  </p>
+
+  <form class="card log-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="log-form__session-fields">
+      <div class="field">
+        <label for="performedAt">Date &amp; time</label>
+        <input id="performedAt" type="datetime-local" formControlName="performedAt" required />
+        @if (form.controls.performedAt.invalid && form.controls.performedAt.touched) {
+          <p class="field__error" role="alert">Date &amp; time is required.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" type="text" formControlName="title" placeholder="e.g. Push day" />
+      </div>
+
+      <div class="field">
+        <label for="cycleDay">Cycle day</label>
+        <input id="cycleDay" type="number" min="1" step="1" formControlName="cycleDay" />
+      </div>
+
+      <div class="field">
+        <label for="durationMin">Duration (min)</label>
+        <input id="durationMin" type="number" min="0" step="1" formControlName="durationMin" />
+      </div>
+
+      <fieldset class="field field--unit">
+        <legend>Unit</legend>
+        <label class="radio">
+          <input type="radio" formControlName="unit" value="kg" />
+          kg
+        </label>
+        <label class="radio">
+          <input type="radio" formControlName="unit" value="lb" />
+          lb
+        </label>
+      </fieldset>
+    </div>
+
+    <div class="log-form__sets" formArrayName="sets">
+      @for (row of sets.controls; track row; let i = $index) {
+        <fieldset class="set-row" [formGroupName]="i">
+          <legend>Set {{ i + 1 }}</legend>
+
+          <div class="field">
+            <label [for]="'exercise-search-' + i">Exercise</label>
+            <input
+              [id]="'exercise-search-' + i"
+              type="text"
+              formControlName="search"
+              [attr.aria-describedby]="'exercise-options-' + i"
+              autocomplete="off"
+              placeholder="Search exercise…"
+            />
+            <select
+              [id]="'exercise-select-' + i"
+              [attr.aria-label]="'Select exercise for set ' + (i + 1)"
+              [attr.aria-describedby]="'exercise-options-' + i"
+              (change)="selectExerciseFromOption($event, i)"
+            >
+              <option value="" [selected]="row.controls['exerciseId'].value === null">
+                Choose an exercise…
+              </option>
+              @for (exercise of filteredCatalog(row.controls['search'].value); track exercise.id) {
+                <option
+                  [value]="exercise.id"
+                  [selected]="row.controls['exerciseId'].value === exercise.id"
+                >
+                  {{ exercise.name }}
+                </option>
+              }
+            </select>
+            <p [id]="'exercise-options-' + i" class="field__hint">
+              Type to filter, then choose from the list.
+            </p>
+            @if (row.controls['exerciseId'].invalid && row.controls['exerciseId'].touched) {
+              <p class="field__error" role="alert">Choose an exercise.</p>
+            }
+          </div>
+
+          <div class="field field--stepper">
+            <label [for]="'weight-' + i">Weight ({{ unit.value }})</label>
+            <div class="stepper">
+              <button
+                type="button"
+                class="stepper__btn"
+                [attr.aria-label]="'Decrease weight for set ' + (i + 1)"
+                (click)="stepWeight(i, -weightStep())"
+              >
+                −
+              </button>
+              <input
+                [id]="'weight-' + i"
+                type="number"
+                min="0"
+                [step]="weightStep()"
+                formControlName="weight"
+                required
+              />
+              <button
+                type="button"
+                class="stepper__btn"
+                [attr.aria-label]="'Increase weight for set ' + (i + 1)"
+                (click)="stepWeight(i, weightStep())"
+              >
+                +
+              </button>
+            </div>
+            @if (row.controls['weight'].invalid && row.controls['weight'].touched) {
+              <p class="field__error" role="alert">Enter a weight of 0 or more.</p>
+            }
+          </div>
+
+          <div class="field field--stepper">
+            <label [for]="'reps-' + i">Reps</label>
+            <div class="stepper">
+              <button
+                type="button"
+                class="stepper__btn"
+                [attr.aria-label]="'Decrease reps for set ' + (i + 1)"
+                (click)="stepReps(i, -1)"
+              >
+                −
+              </button>
+              <input [id]="'reps-' + i" type="number" min="0" step="1" formControlName="reps" />
+              <button
+                type="button"
+                class="stepper__btn"
+                [attr.aria-label]="'Increase reps for set ' + (i + 1)"
+                (click)="stepReps(i, 1)"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <label class="checkbox">
+            <input type="checkbox" formControlName="perSide" />
+            Per side
+          </label>
+
+          <label class="checkbox">
+            <input type="checkbox" formControlName="isWarmup" />
+            Warm-up
+          </label>
+
+          <div class="field">
+            <label [for]="'rpe-' + i">RPE</label>
+            <input
+              [id]="'rpe-' + i"
+              type="number"
+              min="0"
+              max="10"
+              step="0.5"
+              formControlName="rpe"
+            />
+          </div>
+
+          <div class="field">
+            <label [for]="'tempo-' + i">Tempo</label>
+            <input [id]="'tempo-' + i" type="text" formControlName="tempo" placeholder="3-1-1" />
+          </div>
+
+          <div class="field">
+            <label [for]="'rest-' + i">Rest (s)</label>
+            <input
+              [id]="'rest-' + i"
+              type="number"
+              min="0"
+              step="5"
+              formControlName="restSeconds"
+            />
+          </div>
+
+          <div class="field field--notes">
+            <label [for]="'notes-' + i">Notes</label>
+            <input [id]="'notes-' + i" type="text" formControlName="notes" />
+          </div>
+
+          <button
+            type="button"
+            class="btn btn--ghost set-row__remove"
+            [disabled]="sets.length <= 1"
+            [attr.aria-label]="'Remove set ' + (i + 1)"
+            (click)="removeSet(i)"
+          >
+            Remove set
+          </button>
+        </fieldset>
+      }
+    </div>
+
+    <div class="log-form__actions">
+      <button type="button" class="btn btn--ghost" (click)="addSet()">Add set</button>
+      <button type="button" class="btn btn--ghost" (click)="repeatLastSet()">
+        Repeat last set
+      </button>
+      <button type="submit" class="btn" [disabled]="submitting()">
+        {{ submitting() ? 'Saving…' : 'Save session' }}
+      </button>
+    </div>
+
+    <div class="log-form__notes field">
+      <label for="session-notes">Session notes</label>
+      <input id="session-notes" type="text" formControlName="notes" />
+    </div>
+
+    <p class="log-form__status" role="status" aria-live="polite">
+      @if (submittedCount() > 0 && !submitting() && !submitError()) {
+        Session saved. Log another one whenever you're ready.
+      }
+    </p>
+    @if (submitError()) {
+      <p class="field__error" role="alert">{{ submitError() }}</p>
+    }
+  </form>
+</section>

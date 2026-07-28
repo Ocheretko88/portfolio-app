@@ -1,0 +1,136 @@
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  padding: var(--space-l);
+}
+
+.log-form__session-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-m);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.field label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--text-muted);
+}
+
+.field input,
+.field select {
+  padding: 0.6rem 0.75rem;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text-strong);
+  font-size: var(--step-0);
+}
+
+.field input:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.field__error {
+  color: var(--c-danger);
+  font-size: var(--step--1);
+  margin: 0;
+}
+
+.field__hint {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  margin: 0;
+}
+
+.field--unit {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-s);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.radio,
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--step-0);
+}
+
+.log-form__sets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.set-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--space-s);
+  padding: var(--space-m);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface-1);
+}
+
+.set-row legend {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+
+.field--notes {
+  grid-column: 1 / -1;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.stepper input {
+  width: 100%;
+  text-align: center;
+}
+
+.stepper__btn {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border-radius: var(--radius-s);
+  border: var(--border-w) solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-strong);
+  font-size: var(--step-1);
+  cursor: pointer;
+}
+
+.stepper__btn:hover {
+  background: var(--surface-3);
+}
+
+.set-row__remove {
+  align-self: end;
+}
+
+.log-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+}
+
+.log-form__status {
+  min-height: 1.5em;
+  color: var(--text);
+}

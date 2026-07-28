@@ -17,6 +17,49 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-6 — Logging form            2026-07-28
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-app feat(gym): add the workout logging form [P1-6] (pending user push)
+What changed: new `features/gym/log/` (`log-form.ts/.html/.css/.spec.ts`) — the
+Phase-1 "15-second" logging flow (spec §6.1). Reactive form (NonNullableFormBuilder,
+typed `FormGroup<SetRowControls>` rows) with one set row on load, native
+search+select exercise picker over the seeded catalog, +/- steppers for
+weight/reps, per-side/warm-up toggles, optional RPE/tempo/rest/cycle-day, a
+kg/lb unit switch, and "repeat last set". Weight converts to canonical integer
+grams (`toGrams()`, ADR-0007) on submit via a new `GymApi.createSession()`
+seam method (`core/api/gym-api.ts`, +2 generated-type aliases in
+`api-types.ts`) and the `/gym/log` route (`gym.routes.ts`). No PrimeNG:
+ADR-0003 already settled that PrimeNG is opt-in per component, not themed
+app-wide, and wiring an unconfigured library was out of this step's scope —
+controls are hand-built, fully native, keyboard-operable HTML instead.
+Criteria: all MET — logs a session in a few interactions (one prefilled row +
+steppers + select); keyboard-only operable (no custom widgets, all native
+controls); AXE clean by manual review (no axe-core tooling exists in the repo,
+same documented gap as prior steps) — labels, fieldset/legend grouping,
+aria-label/aria-describedby, role="alert"/role="status"; component test
+(log-form.spec.ts, 11 specs incl. gram-conversion for both units, invalid-form
+guard, add/remove/repeat, POST body assertion, error path); FE-CHECK green.
+Checks: `npm run typecheck` clean; `npm test` 28/28 (6 spec files, 0
+regressions); `npm run format:check` clean; `npm run build` fails solely on
+the documented sandbox-only Google Fonts 403 (no outbound route to
+fonts.googleapis.com here — same pre-existing issue logged against P0-7/P0-8/
+P1-5), confirmed as the only build error, not a new one.
+Notes / decisions: Evaluator ruled the `gym-api.ts`/`api-types.ts`/
+`gym.routes.ts` touches in-bounds — enablement the step's own "submits → POST"
+scope line requires, not scope creep; no generated file was hand-edited
+(`contract.ts`/`openapi.yaml` untouched). Caught and fixed one bug before
+handoff: `weightStep` was originally a `computed()` over a plain
+`FormControl.value` read (not a signal), so it would never re-evaluate after
+switching kg/lb — changed to a plain method (same pattern as
+`filteredCatalog`) and added a regression test. Evaluator risk notes for
+later, not required now: (1) spec §6.1's "same as last workout" button needs
+history data — carries into P1-7; (2) the exercise search input filters the
+select's options but isn't fully bound to it (a real ARIA combobox would be
+tighter); (3) session notes sits after the action buttons in tab order.
+Next READY step: P1-7 (history list + detail) or P1-8 (dashboard volume tile)
+— both READY, deps already DONE.
+
+---
 ## P1-5 — Frontend api client + store            2026-07-27
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: portfolio-app feat(gym): add GymApi seam + GymStore data loaders [P1-5] (pending user push)

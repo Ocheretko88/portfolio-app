@@ -16,7 +16,9 @@ export type ApiErrorDto = Schemas['ApiError'];
 export type ExerciseCategoryDto = Schemas['ExerciseCategory'];
 export type ExerciseDto = Schemas['Exercise'];
 export type SetEntryDto = Schemas['SetEntry'];
+export type SetEntryInputDto = Schemas['SetEntryInput'];
 export type WorkoutSessionDto = Schemas['WorkoutSession'];
+export type CreateSessionRequestDto = Schemas['CreateSessionRequest'];
 export type StatsOverviewDto = Schemas['StatsOverview'];
 export type PaginationMetaDto = Schemas['PaginationMeta'];
 
