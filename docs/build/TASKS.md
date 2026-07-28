@@ -32,7 +32,7 @@ app `HEAD` matches `origin/main`, so nothing is stranded locally.
 | `npm test` | **28 passed** (6 files) |
 | `npm run format:check` | clean |
 | `npm run build` | fails **only** on the Google Fonts inline → H-2 |
-| `npm run api:types` | regenerates, then leaves a **dirty tree** → H-1 |
+| `npm run api:types` | regenerates, then leaves a **dirty tree** → fixed by H-1 |
 
 **Verdict:** P0-1…P1-6 are genuinely done — the backend slice is real, layered,
 SQL-aggregated and tested; the frontend slice type-checks, tests and formats
@@ -179,7 +179,7 @@ Not verifiable from the audit sandbox — open items for you:
 > H-3…H-5 are real gaps the plan never contained a step for. Small, each one
 > cycle. Do them before Phase 2 widens the surface.
 
-### H-1 · Make `npm run api:types` leave a clean tree — `READY` (no deps)
+### H-1 · Make `npm run api:types` leave a clean tree — `DONE`
 - **Scope:** `portfolio-app/package.json` (the `api:types` script).
 - **Problem:** `openapi-typescript` emits double-quoted output; the committed `contract.ts` is Prettier-formatted (single quotes). A fresh `npm run api:types` therefore rewrites all 1224 lines and dirties the tree — so the `TYPES` gate ("clean, no diff beyond intended") can never literally pass, and a genuine contract drift would hide inside the noise. Confirmed: after `prettier --write` on the regenerated file the diff is **empty**, so the committed types *are* correct today.
 - **Goal:** chain the formatter into the script (`openapi-typescript … && prettier --write src/app/core/api/generated/contract.ts`).

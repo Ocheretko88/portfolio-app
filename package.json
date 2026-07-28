@@ -14,7 +14,7 @@
     "typecheck": "ngc -p tsconfig.app.json --noEmit",
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
-    "api:types": "openapi-typescript src/app/core/api/openapi.yaml -o src/app/core/api/generated/contract.ts"
+    "api:types": "openapi-typescript src/app/core/api/openapi.yaml -o src/app/core/api/generated/contract.ts && prettier --write src/app/core/api/generated/contract.ts"
   },
   "private": true,
   "packageManager": "npm@11.16.0",

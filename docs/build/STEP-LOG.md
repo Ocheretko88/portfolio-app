@@ -17,6 +17,34 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-1 — Make `npm run api:types` leave a clean tree            2026-07-28
+Executor: Claude (Opus, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: portfolio-app `fix(build): format generated contract types so api:types leaves a clean tree [H-1]`
+What changed: one line in `package.json` — `api:types` now chains
+`prettier --write src/app/core/api/generated/contract.ts` after
+`openapi-typescript`. Nothing else; the generated file itself is untouched.
+Criteria: all MET. On a clean checkout `npm run api:types` now leaves
+`contract.ts` unmodified (`git status --short` shows only the intended
+`package.json`), and `npm run format:check` stays clean.
+Checks: TYPES green — `npm run api:types` then `git status` clean; `format:check`
+clean; `typecheck` clean; `npm test` 28/28. Re-run independently by the evaluator.
+Notes / decisions: the evaluator went past the stated criteria and proved the
+gate is now *useful*, not just quiet: deleting `contract.ts` and regenerating
+reproduces the committed file byte-for-byte (md5 match), so nothing was ever
+hand-edited; and a deliberate drift probe (appending a word to a description in
+`openapi.yaml`) surfaced as a **1-line** diff instead of being buried in a
+1248-line reformat, then was reverted. `prettier` is a declared devDependency,
+so npm puts it on PATH for run-scripts — no global needed; `&&` short-circuits,
+so a failing generator does not silently leave a stale file formatted and
+"clean". Evaluator risk notes carried forward, none blocking: (1) **CI never
+runs `api:types`**, so contract drift is still only caught by a human running
+the gate — worth a small CI job (`api:types` + `git diff --exit-code`) in a
+later step; (2) prettier is unpinned (`^3.8.1`), so a formatting-relevant minor
+release would re-dirty the file — but `format:check` already carries that exact
+exposure, so this adds no new risk; (3) the ledger's prose said "1224 lines"
+where `contract.ts` is 639 lines — cosmetic, the problem itself was real.
+
+---
 ## AUDIT — independent progress + plan review            2026-07-28
 Auditor: Claude (Opus, cloud session)   Verdict: n/a (not a build step)
 Commits reviewed: api `b2210a2`, app `b95d353` (app HEAD == origin/main)
