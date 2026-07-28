@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# pre-commit — fast, staged-only gates. Target: under ~2s so nobody reaches for
+# --no-verify out of impatience. The slow, whole-repo gates live in pre-push.
+#
+# Everything here encodes a rule that already exists in docs/build/CONVENTIONS.md
+# or the project's Definition of Done; none of it is new policy.
+
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+# shellcheck source=/dev/null
+. .githooks/_lib.sh
+
+TS_HTML_CSS=$(staged_files '*.ts' '*.html' '*.css' | grep -v '/generated/' || true)
+SPECS=$(staged_files '*.spec.ts' || true)
+CONTRACT='src/app/core/api/generated/contract.ts'
+
+# ── 1. Files that must never enter history ───────────────────────────────────
+BAD_PATHS=$(staged_files | grep -E '(^|/)(\.env$|\.env\.[a-z]+$|.*\.pem$|.*\.p12$|.*id_rsa)|^(dist|node_modules|\.angular)/|^src/environments/version\.ts$' | grep -v '\.env\.example$' || true)
+if [ -n "$BAD_PATHS" ]; then
+  fail "Files that must not be committed are staged:" "$BAD_PATHS" \
+    "Secrets, build output and the generated version stamp all belong in .gitignore."
+fi
+
+# ── 2. Generated API types must match the contract, byte for byte ────────────
+# CONVENTIONS: "never hand-write types that the generator owns". Rather than
+# trusting that, regenerate and compare — this also catches a stale contract.ts
+# staged alongside an edited openapi.yaml.
+if staged_files | grep -qE "^(${CONTRACT//\//\\/}|src/app/core/api/openapi\.yaml)$"; then
+  if [ -d node_modules ]; then
+    npm run --silent api:types >/dev/null 2>&1
+    if ! git diff --quiet -- "$CONTRACT"; then
+      fail "$CONTRACT does not match what 'npm run api:types' produces." \
+        "Either it was hand-edited, or openapi.yaml changed without regenerating." \
+        "The regenerated file is in your working tree now — review it and 'git add' it."
+    fi
+  else
+    warn "node_modules missing — skipped the generated-types check." "Run 'npm ci' to get this gate back."
+  fi
+fi
+
+# ── 3. Tests may not quietly disappear ───────────────────────────────────────
+# The cheapest way to turn a red check green is to delete the test. Make that
+# an explicit, deliberate act instead of an invisible one.
+DELETED_SPECS=$(deleted_files '*.spec.ts' || true)
+if [ -n "$DELETED_SPECS" ] && [ "${ALLOW_TEST_DELETE:-0}" != "1" ]; then
+  fail "This commit deletes test files:" "$DELETED_SPECS" \
+    "If that is genuinely intended: ALLOW_TEST_DELETE=1 git commit ..." \
+    "and say why in the commit body."
+fi
+
+# ── 4. No focused or skipped tests ───────────────────────────────────────────
+# A suite that passes because most of it did not run is worse than a red suite.
+if [ -n "$SPECS" ]; then
+  # shellcheck disable=SC2086
+  HITS=$(grep_staged '(^|[^a-zA-Z.])(fdescribe|fit|xit|xdescribe)\(|\b(describe|it|test)\.(only|skip)\(' $SPECS)
+  if [ -n "$HITS" ]; then
+    fail "Focused or skipped tests are staged:" "$HITS" \
+      "Remove .only/.skip/fdescribe/fit/xit before committing."
+  fi
+fi
+
+# ── 5. Debug leftovers ───────────────────────────────────────────────────────
+if [ -n "$TS_HTML_CSS" ]; then
+  # shellcheck disable=SC2086
+  DBG=$(grep_staged '^\s*debugger;?\s*$' $TS_HTML_CSS)
+  [ -n "$DBG" ] && fail "'debugger' statement staged:" "$DBG"
+  # shellcheck disable=SC2086
+  LOGS=$(grep_staged 'console\.(log|debug)\(' $TS_HTML_CSS)
+  [ -n "$LOGS" ] && warn "console.log left in staged code:" "$LOGS" "Intentional? Fine. Forgotten? Not fine."
+fi
+
+# ── 6. Angular conventions (AGENTS.md / CONVENTIONS.md "instant FAIL" list) ──
+# Cheap regexes for the rules this codebase has already decided on, so a
+# well-meaning generator can't quietly reintroduce the old idioms.
+TS_HTML=$(staged_files '*.ts' '*.html' | grep -v '/generated/' || true)
+if [ -n "$TS_HTML" ]; then
+  # shellcheck disable=SC2086
+  OLD_FLOW=$(grep_staged '\*ngIf|\*ngFor|\*ngSwitch|\[ngClass\]|\[ngStyle\]' $TS_HTML)
+  [ -n "$OLD_FLOW" ] && fail "Legacy Angular idioms staged:" "$OLD_FLOW" \
+    "Use native control flow (@if/@for/@switch) and class/style bindings — CONVENTIONS.md."
+  # shellcheck disable=SC2086
+  DECORATORS=$(grep_staged '@HostBinding|@HostListener|standalone:\s*true' $TS_HTML)
+  [ -n "$DECORATORS" ] && fail "Forbidden decorator/flag staged:" "$DECORATORS" \
+    "Use the 'host' object; 'standalone' is the default and must not be set."
+fi
+
+# ── 7. Formatting ────────────────────────────────────────────────────────────
+if [ -n "$TS_HTML_CSS" ] && [ -d node_modules ]; then
+  # shellcheck disable=SC2086
+  if ! npx --no-install prettier --check $TS_HTML_CSS >/dev/null 2>&1; then
+    fail "Staged files are not Prettier-formatted." \
+      "Run: npm run format   (then re-stage)"
+  fi
+fi
+
+finish

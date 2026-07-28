@@ -214,6 +214,23 @@ Not verifiable from the audit sandbox — open items for you:
 - **Acceptance:** PATCH updates session + nested sets and **recomputes** `is_pr`/`personal_records` (a downgraded lift must lose its PR); DELETE removes session + sets and any PR rows that pointed at them; 404 on unknown id; feature + service + repository tests; contract updated and `TYPES` clean.
 - **Verify:** `BE-CHECK` + `TYPES` · **Evaluator focus:** PR recomputation is correct (the easy bug is leaving a stale PR behind); no logic in the controller.
 
+### H-7 · Versioned git hooks, both repos — `DONE`
+- **Scope:** `.githooks/{_lib.sh,pre-commit,commit-msg,pre-push,README.md}` in **both** repos; `package.json` (`prepare`, `hooks:install`); `composer.json` (`post-install-cmd`).
+- **Goal:** make the Definition of Done enforceable instead of aspirational, and make it survive a fresh clone — `.git/hooks` is per-clone and silently absent for everyone who did not set it up, so hooks live in a versioned directory and `core.hooksPath` is pointed at it by `npm install` / `composer install`.
+- **Acceptance:** every rule fires on a real violation and stays quiet on legitimate work; `pre-commit` under ~2s; `pre-push` runs the full DoD; a fresh clone gets the hooks with no manual step.
+- **Evaluator focus:** no rule that is not already written down in `CONVENTIONS.md`, an ADR or the DoD — hooks are enforcement, not new policy.
+
+### H-8 · Agent guards (`PreToolUse`) — `DONE`
+- **Scope:** `.claude/settings.json` + `.claude/hooks/{guard-write.sh,guard-bash.sh}` in both repos.
+- **Goal:** git hooks protect the repository; these protect the **working tree from the agent**, one tool call earlier — and, crucially, stop an agent from disarming the other layers (`--no-verify`, `core.hooksPath`).
+- **Acceptance:** blocked calls exit 2 with a reason the model can act on; no false positive on ordinary edits; fails **open** on malformed input.
+- **Evaluator focus:** adversarial — try to spell the forbidden command in a way that slips through.
+
+### H-9 · CI re-asserts the invariants — `DONE` (app) · `READY` (api + branch protection)
+- **Scope:** `portfolio-app/.github/workflows/ci.yml` (done); the api workflow and GitHub branch protection (open).
+- **Goal:** a hook can be skipped with `--no-verify`; CI is the copy nobody can bypass, so the invariants that matter are asserted there too — contract-type drift, and a repo-wide sweep for focused/skipped tests, `debugger`, and the banned Angular idioms.
+- **Remaining:** mirror the drift/invariant job in the api workflow, and turn on branch protection for `main` in both repos (require PR + green CI). Branch protection is a GitHub settings change only you can make — without it, every layer above is advisory.
+
 ### H-6 · Reconcile the spec with the code — `READY` (no deps)
 - **Scope:** `portfolio-app/docs/gym-tracker-architecture.md` (§2 diagram, §4 intro), new ADR.
 - **Goal:** the spec still says gym code lives in `app/Domain/Gym/`; it lives in the repo's flat layering (see the P0-3 correction). Update the two references and record the placement decision as an ADR so the next executor doesn't "fix" the code toward a stale doc.

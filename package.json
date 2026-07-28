@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
+    "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
+    "hooks:install": "git config core.hooksPath .githooks && echo 'git hooks -> .githooks'",
     "generate:version": "node scripts/generate-version.mjs",
     "postinstall": "node scripts/generate-version.mjs",
     "prestart": "node scripts/generate-version.mjs",
@@ -14,7 +16,8 @@
     "typecheck": "ngc -p tsconfig.app.json --noEmit",
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
-    "api:types": "openapi-typescript src/app/core/api/openapi.yaml -o src/app/core/api/generated/contract.ts && prettier --write src/app/core/api/generated/contract.ts"
+    "api:types": "openapi-typescript src/app/core/api/openapi.yaml -o src/app/core/api/generated/contract.ts && prettier --write src/app/core/api/generated/contract.ts",
+    "hooks:agent": "mkdir -p .claude/hooks && cp .githooks/agent/settings.json .claude/settings.json && cp .githooks/agent/guard-write.sh .githooks/agent/guard-bash.sh .claude/hooks/ && chmod +x .claude/hooks/*.sh && echo 'agent guards installed -> .claude/'"
   },
   "private": true,
   "packageManager": "npm@11.16.0",

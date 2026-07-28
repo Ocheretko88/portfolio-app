@@ -17,6 +17,72 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-7 / H-8 / H-9 — Three-layer guardrails            2026-07-28
+Executor: Claude (Opus, cloud session)   Evaluator: adversarial self-review (see note)   Verdict: PASS
+Commits: portfolio-app + portfolio-api `ci(hooks): …`
+What changed: the repos had **no** enforcement of any kind — no `.git/hooks`, no
+`core.hooksPath`, no husky/lint-staged, no agent hooks; only GitHub Actions on
+push, and both `main` branches accept direct pushes. Everything the harness
+promises was process, honoured only while whoever drives the agent chooses to
+honour it. Now there are three overlapping layers:
+**Layer 1 — agent guards (H-8, `.claude/`).** `PreToolUse` hooks that exit 2,
+which blocks the tool call and hands the reason back to the model.
+`guard-write.sh` refuses writes to generated `contract.ts`, `.env`, lockfiles,
+`vendor/`, build output, the vendored fonts and already-committed migrations —
+and refuses a `Write` to a spec containing fewer test cases than the file on
+disk. `guard-bash.sh` refuses `--no-verify`, `core.hooksPath` tampering,
+`reset --hard` / `checkout -- .` / `clean -fd`, plain `--force` pushes, and
+`rm -rf` at a root/home/parent path. Both fail **open** on malformed input.
+**Layer 2 — git hooks (H-7, `.githooks/`, versioned, wired by `core.hooksPath`
+from `npm install` / `composer install`).** `pre-commit` (~1-2s, staged only):
+secrets and build output; regenerates `contract.ts` and blocks if the staged
+copy differs; blocks deleted specs, `.only`/`.skip`, `debugger`, and the banned
+Angular idioms (`*ngIf`, `[ngClass]`, `@HostBinding`, `standalone: true`);
+Prettier. API side: the same shape plus a **layering gate** — a controller
+touching `DB::`/`Model::query()`/`->where(` is blocked, which is the single rule
+this API's architecture story rests on — plus `dd()`/`dump()` in `app/`, a
+credential scan (Neon URL with a password, `sk-`/`gsk_`/`AIza` keys), and a
+float-weight check (ADR-0007). `commit-msg`: Conventional Commits, ≤72 chars,
+warns when code lands without a ledger step ID. `pre-push`: the full DoD —
+20s measured on the app (format, typecheck, 28 tests, build, contract drift);
+pint + phpunit on the api, with a warning if `phpunit.xml` stops pinning
+Postgres.
+**Layer 3 — CI (H-9).** The app workflow now re-asserts what `--no-verify`
+could skip: contract-type drift, and a repo-wide sweep for focused/skipped
+tests, `debugger` and the banned idioms.
+Criteria: MET. Every rule was tested against a real violation *and* against
+legitimate work — a docs-only commit, a brand-new spec, a Pint-clean service
+edit, `git push --force-with-lease`, `git stash`, and a commit message that
+merely mentions `--no-verify` all pass; ~25 violation cases all block with an
+actionable message. `pre-push` verified green on a clean tree and red on a
+formatting break.
+Checks: `bash -n` clean on all 10 scripts; app FE-CHECK green; api
+`php artisan test` green on real Postgres; `ci.yml` parses and its greps return
+0 against the current tree.
+Notes / decisions: **the evaluator subagent died mid-review (session limit), so
+the adversarial pass was run by the executor instead — weaker independence than
+the harness asks for, recorded honestly.** It still found and fixed three real
+holes: (1) `git commit --no-ver` slipped through, because git accepts any
+unambiguous abbreviation of a long option — the pattern now matches the
+`--no-v` prefix; (2) `git -c core.hooksPath=/dev/null commit` bypassed every
+hook for one command — any mention of `core.hooksPath` is now refused; (3) a
+relative `./src/...` path dodged the generated-file rule, now normalised. Two
+false positives were also fixed: a commit *message* mentioning `--no-verify` or
+`reset --hard` was blocked (quoted `-m` payloads are now blanked before
+matching), and `git push -n` (dry run) was caught by the `-n` short-flag rule,
+now scoped to `commit`. One residual gap was closed at the commit boundary
+rather than in the agent guard: `guard-write.sh` only sees whole-file `Write`s,
+so a surgical `Edit` could still delete a test case — `pre-commit` now compares
+each staged test file against `HEAD` and blocks a net loss of cases in both
+repos (override `ALLOW_TEST_DELETE=1`).
+Known limits, deliberately not fixed: filenames containing spaces are not
+handled by the staged-file loops (none exist in either repo); a human can still
+`--no-verify` (by design — CI is the backstop); and **branch protection is not
+enabled on either `main`**, which is the one layer only you can turn on. Until
+it is, every gate above is advisable rather than mandatory — that is the single
+highest-value follow-up (H-9 remainder).
+
+---
 ## H-2 — Self-host the web fonts            2026-07-28
 Executor: Claude (Opus, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS (after one FAIL cycle)
 Commit: portfolio-app `fix(build): self-host Inter and JetBrains Mono [H-2]`
