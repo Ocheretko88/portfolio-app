@@ -194,7 +194,7 @@ Not verifiable from the audit sandbox — open items for you:
 - **Acceptance:** no `fonts.googleapis.com` reference remains; `npm run build` succeeds with **no network**; identical rendering in light + dark; bundle-size delta recorded in the STEP-LOG.
 - **Verify:** `FE-CHECK` with networking disabled · **Evaluator focus:** build is hermetic; no FOUT regression; licenses (both are OFL) shipped.
 
-### H-3 · Real a11y assertions, not manual review — `READY` (no deps)
+### H-3 · Real a11y assertions, not manual review — `DONE`
 - **Scope:** `portfolio-app` dev-deps (`axe-core`), a small `testing/a11y.ts` helper, `log-form.spec.ts` + `dashboard.spec.ts`.
 - **Problem:** `CONVENTIONS.md` makes AXE a hard gate and the DoD repeats it, but **no axe tooling exists in the repo** — every UI step so far passed on "AXE clean by manual review". A gate nothing can fail is not a gate.
 - **Goal:** one helper that runs axe against a rendered fixture and fails the test on violations; wire it into the existing component specs.
@@ -308,12 +308,39 @@ R2/Supabase uploads as a sub-step · **legacy importer** consuming the corpus pe
 `LlmClient` interface + Groq binding · **progress-coach** agent (read tools, SSE
 stream) + eval · **program-drafter** (schema-validated draft) + eval ·
 **NL-logging** agent over `PARSING.md` (corpus = eval set) · talking-head recap
-(labeled stretch; free/self-hosted path) · i18n (Ukrainian first) pass.
+(labeled stretch; free/self-hosted path) · **i18n pass — full EN + UK** for all
+UI copy, the exercise catalog, and AI-generated text (see the Backlog entry
+above for the concrete shape; decompose into its own atomic steps here rather
+than one step).
 
 ---
 
 ## Backlog / cross-cutting (schedule into phases, don't forget)
-- **i18n Ukrainian-first** — the athlete logs in Ukrainian; catalog + UI need UK strings from the start (fold into P0-6 naming + a Phase-2/4 i18n step).
+- **i18n — full EN + UK, not Ukrainian-only.** Everything user-facing needs both
+  languages with a runtime switch, not a Ukrainian-first default: UI chrome
+  (nav, labels, buttons, form copy, validation/error messages, empty/error
+  states), the exercise catalog (name, muscle, equipment, category), and any
+  AI-generated copy in Phase 4. Concretely, when this is picked up:
+  - **Backend:** `exercises` (and `program_resources` if Phase 3 lands first)
+    need a translatable-name shape — either `name_en`/`name_uk` columns or a
+    small `translations` table — decided as an ADR; `ExerciseCatalogSeeder`
+    (P0-6) currently stores a Ukrainian display name + an English *slug* only,
+    which is not a real English display name and will need a migration +
+    reseed to add one, not a rename.
+  - **Frontend:** `@angular/localize` (or an equivalent signal-based i18n
+    service, matching the `ThemeStore` idiom for persisted user prefs) with
+    the same conventions as `ThemeStore` — locale persisted, switch is instant
+    (no reload), default follows the browser but is user-overridable. Every
+    hardcoded string introduced in UI steps from here on should be written so
+    it's mechanically extractable later (no string concatenation for
+    sentences, no baked-in copy in shared components) — this is a "don't make
+    the retrofit worse" guardrail, not a request to build the i18n layer early.
+  - **Where it lands:** decompose into atomic steps (same template as P0–P2)
+    when scheduled — likely its own phase or folded into Phase 4 per the
+    architecture doc — rather than a single "add i18n" step; it touches the
+    catalog schema, every existing component, and the AI-generated copy paths.
+  - **Scope note:** do not silently start this mid-flight inside an unrelated
+    step; it's cross-cutting enough to need its own ADR + step group.
 - **Cycle-day analytics** — once data exists, cycle-day is a real training variable worth a chart (decision point is P2-9).
 - Rate-limiting + graceful degradation for AI endpoints (Phase 4).
 - CORS locked to the Vercel origin (re-verify in P1-9, not P0-3 — it needs the deployed origin).

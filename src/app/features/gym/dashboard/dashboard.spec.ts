@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { StatsOverviewDto, WorkoutSessionDto } from '../../../core/api/api-types';
+import { assertNoA11yViolations } from '../../../../testing/a11y';
 import { GymDashboard } from './dashboard';
 
 describe('GymDashboard', () => {
@@ -257,5 +258,31 @@ describe('GymDashboard', () => {
     expect(el.querySelector('.trend-table')).toBeTruthy();
     expect(el.querySelector('.trend-chart')).toBeNull();
     expect(el.querySelector('.trend-table')?.textContent).toContain('100 kg');
+  });
+
+  it('has no axe violations with real data loaded (chart view)', async () => {
+    const fixture = TestBed.createComponent(GymDashboard);
+    fixture.detectChanges();
+    statsRequest(httpMock).flush({ data: stats, meta: statsMeta() });
+    sessionsRequest(httpMock).flush({
+      data: [
+        session(2, '2026-07-10T10:00:00Z', 200_000),
+        session(1, '2026-07-01T10:00:00Z', 100_000),
+      ],
+      meta: sessionsMeta({ total: 2, totalPages: 1 }),
+    });
+    fixture.detectChanges();
+
+    await assertNoA11yViolations(fixture.nativeElement);
+  });
+
+  it('has no axe violations in the stat-tile-error / empty-trend state', async () => {
+    const fixture = TestBed.createComponent(GymDashboard);
+    fixture.detectChanges();
+    statsRequest(httpMock).flush('down', { status: 500, statusText: 'Server Error' });
+    sessionsRequest(httpMock).flush({ data: [], meta: sessionsMeta() });
+    fixture.detectChanges();
+
+    await assertNoA11yViolations(fixture.nativeElement);
   });
 });

@@ -94,7 +94,8 @@
         </table>
       } @else {
         <!--
-          `role="group"`, not `role="img"` — an `img` role forces the whole
+          `role="group"`, not `role="img"`, on the outer <svg> — an `img`
+          role forces the whole
           subtree presentational, which would silently strip the accessible
           name off every focusable hit-circle below. `group` carries the
           chart-level `aria-label` (the same summary a screen-reader-only
@@ -104,6 +105,12 @@
           The scroll wrapper keeps a fixed minimum rendered width so axis/tick
           text never scales down past legible on narrow viewports — the SVG
           gains a horizontal scrollbar there instead of shrinking its text.
+          Each `.trend-chart__hit` circle below carries its own `role="img"`
+          — an SVG `<circle>` has no implicit ARIA semantics, so its
+          `aria-label` is otherwise an axe `aria-prohibited-attr` violation
+          (H-3 audit finding); `role="img"` is the one role that permits
+          `aria-label` without hijacking descendant focus/semantics the way
+          the outer `role="img"` would have.
         -->
         <div class="trend-chart-scroll">
           <svg
@@ -148,6 +155,7 @@
               <circle class="trend-chart__ring" [attr.cx]="point.x" [attr.cy]="point.y" r="7" />
               <circle
                 class="trend-chart__hit"
+                role="img"
                 [attr.cx]="point.x"
                 [attr.cy]="point.y"
                 r="11"

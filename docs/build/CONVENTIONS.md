@@ -19,6 +19,17 @@ architecture spec. "It compiled" is not permission to break these.
 - **Small commits.** One step = one focused commit, conventional message
   (`feat(gym): …`, `test(gym): …`), referencing the step ID.
 
+## i18n readiness (full EN + UK is coming, see TASKS.md Backlog)
+
+- The app is **not** localized yet, but it will be (both English and
+  Ukrainian, user-switchable — not Ukrainian-only). Until that step lands,
+  don't make the retrofit harder: no string concatenation to build a
+  sentence, no user-facing copy baked into a shared/reusable component in a
+  way that can't be swapped for a translation key later.
+- The exercise catalog's Ukrainian name and English slug (`ExerciseCatalogSeeder`,
+  P0-6) are **not** a real bilingual name pair — don't treat the slug as an
+  English display string anywhere in the UI.
+
 ## Frontend (Angular 21) — from AGENTS.md
 
 - Standalone components; do **not** set `standalone: true` (it's the default).

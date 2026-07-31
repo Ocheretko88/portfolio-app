@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import type { ExerciseDto } from '../../../core/api/api-types';
+import { assertNoA11yViolations } from '../../../../testing/a11y';
 import { GymLogForm } from './log-form';
 
 describe('GymLogForm', () => {
@@ -222,5 +223,27 @@ describe('GymLogForm', () => {
     );
     expect(options).toContain('Присід');
     expect(options).toContain('Жим лежачи');
+  });
+
+  it('has no axe violations once the catalog has loaded', async () => {
+    const fixture = TestBed.createComponent(GymLogForm);
+    fixture.detectChanges();
+    flushCatalog();
+    fixture.detectChanges();
+
+    await assertNoA11yViolations(fixture.nativeElement);
+  });
+
+  it('has no axe violations with a second set row added and a validation error shown', async () => {
+    const fixture = TestBed.createComponent(GymLogForm);
+    fixture.detectChanges();
+    flushCatalog();
+    const component = fixture.componentInstance;
+
+    component['addSet']();
+    component['submit']();
+    fixture.detectChanges();
+
+    await assertNoA11yViolations(fixture.nativeElement);
   });
 });

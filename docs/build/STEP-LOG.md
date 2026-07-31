@@ -17,6 +17,42 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-3 — Real a11y assertions, not manual review            2026-07-31
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
+Commit: feat(gym): add axe a11y assertions to gym specs [H-3]
+What changed: added `axe-core` as a devDependency and `src/testing/a11y.ts`
+(`assertNoA11yViolations(root)` — runs `axe.run` with `color-contrast` disabled,
+since jsdom has no paint engine and can't compute real rendered colors; throws
+with rule id/impact/targets on any violation). Wired into 2 new tests each in
+`log-form.spec.ts` (catalog loaded; second row + validation error shown) and
+`dashboard.spec.ts` (real chart data loaded; stat-tile-error/empty-trend state).
+The new assertions immediately caught a real, pre-existing violation:
+`.trend-chart__hit` SVG `<circle>` elements carried `aria-label` with no ARIA
+role — a bare `<circle>` has no implicit semantics, so that's an axe
+`aria-prohibited-attr` violation. Fixed with `role="img"` on that circle (the
+outer `<svg>` keeps `role="group"`, per the existing P1-8 comment, so the
+per-point focus stops aren't hijacked into a single opaque image).
+Criteria: all MET (see evaluator report) — helper exists and is used by 4 new
+tests across the 2 required specs; the evaluator independently reproduced the
+"deliberate break fails the test" criterion twice (removing `role="img"` →
+dashboard axe test fails with `aria-prohibited-attr`; removing a `<label for>`
+in the log form → both log-form axe tests fail with the `label` rule), then
+confirmed the tree matched the submitted diff afterward; `npm test` green at
+47/47 (up from 45 baseline); the CI `npm test` step already covers new specs,
+no workflow file change needed.
+Checks: FE-CHECK green — `npm run typecheck` clean, `npm test` 47/47, `npm run
+format:check` clean, `npm run build` succeeds (dashboard/log-form lazy chunks
+build fine).
+Notes / decisions: disabling `color-contrast` in the helper is a scoping
+decision, not a weakened acceptance criterion — the step's actual criterion is
+"the helper covers both themes if feasible", not "covers every axe rule", and
+CONVENTIONS.md's contrast gate stays a visual-review item as it already was.
+Evaluator risk note for later steps: the helper never toggles light/dark
+theme, so "covers both themes" is not really exercised — don't cite this
+helper as theme coverage in a future step; and blanking a `<label for>` with
+only a `placeholder` still passes axe's label rule, worth a lint note in a
+later a11y pass.
+
 ## P1-8 — Dashboard: volume tile + trend chart            2026-07-31
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent, 2 rounds)   Verdict: PASS
 Commit: feat(gym): add dashboard volume tile + trend chart [P1-8]
