@@ -1,0 +1,204 @@
+<section id="gym" class="section container">
+  <h1 class="section-title">GymTracker</h1>
+  <p class="text-muted">Your training at a glance — total volume lifted and the trend behind it.</p>
+
+  <div class="gym-dashboard">
+    <!-- Total-volume stat tile — every number here is a server-computed SQL aggregate (P1-4). -->
+    <div class="stat-tile card">
+      @if (store.statsLoading() && !store.hasStats()) {
+        <p class="dashboard-state" role="status">Loading stats…</p>
+      } @else if (!store.hasStats()) {
+        <div class="dashboard-state dashboard-state--error" role="alert">
+          <p>Could not load your stats. Please try again.</p>
+          <button type="button" class="btn btn--ghost" (click)="retryStats()">Retry</button>
+        </div>
+      } @else {
+        <p class="stat-tile__label">Total volume lifted</p>
+        <p class="stat-tile__value">{{ totalVolumeLabel() }}</p>
+        <p class="stat-tile__sub">
+          <span class="text-muted">This week:</span>
+          <span class="text-mono">{{ thisWeekLabel() }}</span>
+          <span
+            class="stat-tile__delta"
+            [class.stat-tile__delta--up]="deltaDirection() === 'up'"
+            [class.stat-tile__delta--down]="deltaDirection() === 'down'"
+          >
+            <i
+              class="pi"
+              [class.pi-arrow-up]="deltaDirection() === 'up'"
+              [class.pi-arrow-down]="deltaDirection() === 'down'"
+              [class.pi-minus]="deltaDirection() === 'flat'"
+              aria-hidden="true"
+            ></i>
+            {{ deltaLabel() }}
+          </span>
+        </p>
+      }
+    </div>
+
+    <!-- Volume-over-time trend — see dashboard.ts class doc for what feeds it and why. -->
+    <figure class="chart-card card">
+      <figcaption class="chart-card__head">
+        <span class="chart-card__title">Volume over time</span>
+        @if (hasTrend()) {
+          <button
+            type="button"
+            class="btn btn--ghost btn--small"
+            [attr.aria-pressed]="showTrendTable()"
+            (click)="toggleTrendTable()"
+          >
+            {{ showTrendTable() ? 'View chart' : 'View as table' }}
+          </button>
+        }
+      </figcaption>
+
+      @if (store.sessionsError() && !hasTrend()) {
+        <div
+          class="dashboard-state dashboard-state--error"
+          role="alert"
+          [attr.aria-busy]="store.sessionsLoading()"
+        >
+          <p>{{ store.sessionsError() }}</p>
+          <button type="button" class="btn btn--ghost" (click)="retryTrend()">Retry</button>
+        </div>
+      } @else if (store.sessionsLoading() && !hasTrend()) {
+        <p class="dashboard-state" role="status">Loading recent sessions…</p>
+      } @else if (!hasTrend()) {
+        <div class="dashboard-state" role="status">
+          <p>No sessions logged yet — your trend will appear here.</p>
+          <a class="btn" routerLink="/gym/log">Log your first workout</a>
+        </div>
+      } @else if (showTrendTable()) {
+        <table class="trend-table">
+          <caption class="visually-hidden">
+            Volume per session, oldest to newest,
+            {{
+              trendRows().length
+            }}
+            sessions
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Volume</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (point of trendRows(); track point.sessionId) {
+              <tr>
+                <td class="text-mono">{{ pointDateLabel(point) }}</td>
+                <td class="text-mono">{{ pointVolumeLabel(point) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <!--
+          `role="group"`, not `role="img"` — an `img` role forces the whole
+          subtree presentational, which would silently strip the accessible
+          name off every focusable hit-circle below. `group` carries the
+          chart-level `aria-label` (the same summary a screen-reader-only
+          `img` would announce) without disabling the per-point focus stops,
+          so `chartSummary()` and each point's own `aria-label` coexist
+          instead of one erasing the other (evaluator finding, P1-8 review).
+          The scroll wrapper keeps a fixed minimum rendered width so axis/tick
+          text never scales down past legible on narrow viewports — the SVG
+          gains a horizontal scrollbar there instead of shrinking its text.
+        -->
+        <div class="trend-chart-scroll">
+          <svg
+            class="trend-chart"
+            [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
+            role="group"
+            [attr.aria-label]="chartSummary()"
+          >
+            <!-- Gridlines: recessive, one-step-off-surface hairlines. -->
+            @for (tick of yTicks(); track tick) {
+              <line
+                class="trend-chart__grid"
+                [attr.x1]="plotLeft"
+                [attr.x2]="plotRight"
+                [attr.y1]="baselineY - (tick / yMax()) * (baselineY - plotTop)"
+                [attr.y2]="baselineY - (tick / yMax()) * (baselineY - plotTop)"
+              />
+              <text
+                class="trend-chart__tick"
+                [attr.x]="plotLeft - 8"
+                [attr.y]="baselineY - (tick / yMax()) * (baselineY - plotTop)"
+                text-anchor="end"
+                dominant-baseline="middle"
+              >
+                {{ tickLabel(tick) }}
+              </text>
+            }
+            <!-- Axis unit — the ticks above are bare numbers, always kg. -->
+            <text
+              class="trend-chart__tick"
+              [attr.x]="plotLeft"
+              [attr.y]="plotTop - 4"
+              text-anchor="start"
+            >
+              kg
+            </text>
+
+            <path class="trend-chart__area" [attr.d]="areaPath()" />
+            <path class="trend-chart__line" [attr.d]="linePath()" />
+
+            @for (point of plotted(); track point.sessionId; let first = $first; let last = $last) {
+              <circle class="trend-chart__ring" [attr.cx]="point.x" [attr.cy]="point.y" r="7" />
+              <circle
+                class="trend-chart__hit"
+                [attr.cx]="point.x"
+                [attr.cy]="point.y"
+                r="11"
+                tabindex="0"
+                [attr.aria-label]="pointLabel(point)"
+              >
+                <title>{{ pointLabel(point) }}</title>
+              </circle>
+              <circle class="trend-chart__dot" [attr.cx]="point.x" [attr.cy]="point.y" r="5" />
+              @if (first || last) {
+                <text
+                  class="trend-chart__axis-label"
+                  [attr.x]="point.x"
+                  [attr.y]="chartHeight - 6"
+                  [attr.text-anchor]="first ? 'start' : 'end'"
+                >
+                  {{ axisLabel(point) }}
+                </text>
+              }
+              @if (last) {
+                <!--
+                  Same `pointVolumeLabel()` as the aria-label, tooltip and
+                  table row below — previously this used the always-kg
+                  `tickLabel()`, so one real session could read "8450 kg" on
+                  the chart but "8.5 t" everywhere else it's described
+                  (evaluator finding, P1-8 review).
+                -->
+                <text
+                  class="trend-chart__end-label"
+                  [attr.x]="point.x"
+                  [attr.y]="point.y - 12"
+                  text-anchor="end"
+                >
+                  {{ pointVolumeLabel(point) }}
+                </text>
+              }
+            }
+          </svg>
+        </div>
+      }
+
+      @if (store.sessionsError() && hasTrend()) {
+        <div
+          class="dashboard-state dashboard-state--error dashboard-state--inline"
+          role="alert"
+          [attr.aria-busy]="store.sessionsLoading()"
+        >
+          <p>{{ store.sessionsError() }}</p>
+          <button type="button" class="btn btn--ghost" (click)="retryTrend()">Retry</button>
+        </div>
+      }
+    </figure>
+  </div>
+</section>

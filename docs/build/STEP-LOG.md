@@ -17,6 +17,75 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## P1-8 — Dashboard: volume tile + trend chart            2026-07-31
+Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent, 2 rounds)   Verdict: PASS
+Commit: feat(gym): add dashboard volume tile + trend chart [P1-8]
+What changed: `features/gym/dashboard/{dashboard.ts,html,css,spec.ts}` replaces
+the P0-8 placeholder (which rendered the unused `store.status()` scaffold
+field) with a total-volume stat tile (all-time value, this-week value, and a
+signed delta vs last week, colored by direction) reading only
+`GymStore.stats()` (`/gym/stats/overview`, P1-4 — every number a server SQL
+aggregate), plus a hand-rolled inline-SVG volume-over-time line chart per the
+dataviz skill's mark specs (2px round-joined line, r=5 dot in an r=7
+surface-colored ring, ~10% opacity area fill, hairline recessive gridlines, no
+legend for the single series, selective first/last/endpoint direct labels)
+with a table-view accessibility twin and per-point keyboard-focusable hit
+targets.
+Data-source decision (flagged to the evaluator, both rounds): `/gym/stats/overview`
+carries only point-in-time aggregates — no time series exists until P2-1/P2-5
+(gated on P1-9). Rather than expand this step to add a backend endpoint, the
+trend line plots the 20 most recently logged sessions (`GymStore.loadSessions`,
+already used by P1-3/P1-7) and computes each point as that single session's own
+`SUM(reps * weightGrams)` — the same reduction `history.ts` already performs
+client-side per session. No aggregation happens *across* sessions in JS. Recorded
+as a permanent ledger note under P1-8 in TASKS.md so P2-2 retargets the chart
+primitives at the real series rather than re-deriving this decision.
+Criteria: all MET — tile and chart render real data (no hard-coded numbers);
+dark/light parity via design tokens only (zero literal colors in dashboard.css);
+contrast passes (axis/tick text on `--text`, 9.81:1 light / 10.74:1 dark); tests
+green; FE-CHECK green.
+Checks: `npm run typecheck` clean; `npm test` 43/43 (7 files) — dashboard.spec.ts
+alone carries 9 (was 2 in the P0-8 scaffold spec, net +7, which is where the
+36→43 suite delta comes from — not +1 as a first read of the diff stat might
+suggest, since the whole spec file was rewritten rather than appended to);
+`npm run format:check` clean; `npm run build` succeeds (`dashboard` lazy chunk,
+12.75 kB). Run against a clean `npm install` of the exact working tree in a
+separate Linux container — the on-device sandbox has a `@esbuild/darwin-arm64`
+binary with no Linux counterpart and no network to fetch one, so it cannot run
+`ng build`/`ng test` at all; environment limitation of that sandbox, not the code.
+Notes / decisions: first evaluator round FAILed on four defects, all fixed before
+this PASS: (1) axis/tick text used `--text-muted` (3.89:1 on light, under AA) —
+switched to `--text` (9.81:1/10.74:1) and added a `.trend-chart-scroll` wrapper
+(`overflow-x: auto`, `min-width: 480px` on the SVG) so the text can't be
+scaled below legible on narrow viewports; (2) the on-chart end-label used a
+bare-kg formatter while the aria-label/tooltip/table used an auto-compact
+kg-or-tonnes formatter, so one real session could read two different numbers —
+unified on `pointVolumeLabel()` everywhere, added a "kg" axis-unit annotation,
+and added a regression test with an 8,500 kg fixture asserting all three
+surfaces agree; (3) `role="img"` on the `<svg>` forces its subtree
+presentational, silently breaking the accessible names on the 20 focusable
+per-point hit-circles — changed to `role="group"`; (4) the trend-chart
+data-source deviation (above) needed a permanent ledger line, not just a code
+comment. Also fixed two non-blocking risk notes while in there: the hover/focus
+dot-grow now uses `transform: scale()` (Safari-safe) instead of animating the
+SVG `r` geometry property as CSS; a duplicated literal `16` in the gridline-y
+formula is now a `plotTop` member alias. Carried-forward, non-blocking
+evaluator risk notes for later phases: the y-axis ticks stay in bare kg while
+the endpoint label can read in tonnes (each is now unit-labelled, so nothing is
+ambiguous, but P2-8 should unify them); `GymStore` is `providedIn: 'root'` and
+shared with `/gym/history` — this step's `loadSessions({perPage: 20})`
+overwrites `sessions`/`sessionsMeta` that history also reads (history
+self-heals by refetching on its own construction today, but P2-x should not
+assume that keeps holding); `GymStore.loadStats()` still has no `statsError`
+field (unlike `loadSessions()`), so the tile infers failure from `!hasStats()`
+— correct today since the endpoint always returns a body, fragile long-term,
+and out of this step's declared scope to fix (a Phase-1.5 candidate, matching
+the P1-7 audit item that added `sessionsError`). Real axe-core assertions are
+still H-3's job, not this step's — the chart's a11y was judged by ARIA/keyboard/
+contrast review, consistent with prior UI steps; P1-9's a11y audit should point
+at this `role="group"` + focusable-children pattern specifically.
+
+---
 ## P1-7 — History list + detail            2026-07-28
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent, 4 rounds)   Verdict: PASS
 Commit: feat(gym): add session history list + detail [P1-7]

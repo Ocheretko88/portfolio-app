@@ -1,0 +1,213 @@
+.gym-dashboard {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 2fr;
+  gap: var(--space-s);
+  margin-top: 1.6rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .gym-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----- Stat tile ---------------------------------------------------------- */
+
+.stat-tile {
+  padding: var(--space-s);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 100%;
+}
+
+.stat-tile__label {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--text-muted);
+}
+
+.stat-tile__value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  font-weight: 700;
+  color: var(--brand);
+  line-height: 1;
+}
+
+.stat-tile__sub {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--step--1);
+}
+
+.stat-tile__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.stat-tile__delta--up {
+  color: var(--live);
+}
+.stat-tile__delta--down {
+  color: var(--danger);
+}
+
+/* ----- Chart card ---------------------------------------------------------- */
+
+.chart-card {
+  padding: var(--space-s);
+  margin: 0;
+}
+
+.chart-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin-bottom: var(--space-xs);
+}
+
+.chart-card__title {
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.btn--small {
+  padding: 0.35rem 0.8rem;
+  font-size: var(--step--1);
+}
+
+.dashboard-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-s);
+  padding: var(--space-s);
+  color: var(--text-muted);
+}
+.dashboard-state--error {
+  color: var(--text-strong);
+}
+.dashboard-state--inline {
+  margin-top: var(--space-s);
+  padding-top: 0;
+}
+
+/* ----- Trend chart (SVG) ---------------------------------------------------
+ * Mark specs per the dataviz skill: 2px line, round join/cap; ≥8px marker
+ * (r=5, 2px surface ring so it stays legible crossing the line); area fill at
+ * ~10% opacity; hairline recessive gridlines; text never wears the series
+ * color (labels use text tokens, only the line/dot/fill carry --brand).
+ */
+
+/*
+ * The SVG scales by width (viewBox 640 units wide), so on a narrow viewport a
+ * naive 100%-width chart shrinks its (fixed-size-in-user-units) axis/tick
+ * text below legible. `min-width` keeps the rendered text at its authored
+ * size; the wrapper scrolls horizontally instead of shrinking it further
+ * (evaluator finding, P1-8 review).
+ */
+.trend-chart-scroll {
+  overflow-x: auto;
+}
+
+.trend-chart {
+  display: block;
+  width: 100%;
+  min-width: 480px;
+  height: auto;
+  overflow: visible;
+}
+
+.trend-chart__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.trend-chart__tick,
+.trend-chart__axis-label {
+  /* `--text`, not `--text-muted` — `--text-muted` fails WCAG-AA (3.89:1) on
+     the light theme at this size; `--text` clears both themes with margin
+     (evaluator finding, P1-8 review). */
+  fill: var(--text);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+}
+
+.trend-chart__end-label {
+  fill: var(--text-strong);
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.trend-chart__area {
+  fill: var(--brand);
+  opacity: 0.1;
+  stroke: none;
+}
+
+.trend-chart__line {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-chart__ring {
+  fill: var(--surface-1);
+  pointer-events: none;
+}
+
+.trend-chart__dot {
+  fill: var(--brand);
+  pointer-events: none;
+  /* `transform`, not the `r` geometry property, for the hover/focus grow —
+     `transform` has universal SVG support where animating `r` as CSS does
+     not (evaluator finding, P1-8 review). */
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--transition);
+}
+
+.trend-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.trend-chart__hit:hover + .trend-chart__dot,
+.trend-chart__hit:focus-visible + .trend-chart__dot {
+  transform: scale(1.3);
+}
+.trend-chart__hit:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ----- Table-view twin ------------------------------------------------------ */
+
+.trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+.trend-table th,
+.trend-table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: var(--border-w) solid var(--border);
+}
+.trend-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}

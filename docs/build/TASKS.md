@@ -154,10 +154,11 @@ Not verifiable from the audit sandbox — open items for you:
   2. **Error state must be distinguishable from empty.** `GymStore`'s three loaders `catchError` to `[]`/`null`, so a failed request renders as "no sessions". Add an `error` field to the store and an inline retry affordance; assert both paths in the spec.
 - **Evaluator focus:** OnPush, native control flow, no data massaging in template; "no results" and "request failed" are visibly different states.
 
-### P1-8 · Dashboard: volume tile + trend chart — `READY` (P1-4, P1-5)
+### P1-8 · Dashboard: volume tile + trend chart — `DONE` (P1-4, P1-5)
 - **Scope:** `features/gym/dashboard/*` — total-volume stat tile + volume-over-time chart on real `/stats` data; Apple-style; light+dark. Replaces the current placeholder component (which still renders `store.status()` — a scaffold field nothing ever sets to `ready`; drop it or make it meaningful).
 - **Acceptance:** tile + chart render real data; dark/light parity; contrast passes; test; FE-CHECK. Read the **dataviz** guidance before choosing colors/marks.
 - **Evaluator focus:** design-system coherence, accessible chart, no hard-coded numbers.
+- **Data-source note (2026-07-31):** `/gym/stats/overview` has no time series (only point-in-time aggregates) — a real per-day/per-exercise series doesn't exist until P2-1/P2-5, both gated behind P1-9. Rather than expand this step to add a backend endpoint, the trend chart plots the already-fetched recent sessions (`GymStore.loadSessions`, P1-3/P1-7): each point is one real session's own `SUM(reps * weightGrams)`, no aggregation across sessions in JS. Documented in `dashboard.ts`; superseded once P2-1/P2-5 land — P2-2 should retarget the chart primitives at the real series then, not before.
 
 ### P1-9 · Slice DoD gate — `BLOCKED` (P1-6..8, H-1..H-5)
 - **Scope:** end-to-end pass on `/gym`; a11y audit; README/roadmap tick.
