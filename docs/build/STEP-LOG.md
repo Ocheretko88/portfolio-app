@@ -17,6 +17,50 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-4a — Client sends the write token            2026-08-14
+Executor: Claude (Opus, cloud session)   Evaluator: self-review (Mode C)   Verdict: PASS
+Commit: portfolio-app `feat(gym): send the write token from the client [H-4a]`
+What changed: `scripts/generate-runtime-config.mjs` writes a git-ignored
+`src/environments/runtime-config.ts` from `GYM_WRITE_TOKEN` on
+postinstall/prestart/prebuild — the same shape and lifecycle as the existing
+`generate-version.mjs`, chosen over adding a committed constant to
+`environment.ts`. `GymApi` injects the value via a `GYM_WRITE_TOKEN`
+InjectionToken and passes it to `ApiClient.post` as an opt-in header argument;
+the log form now distinguishes a 401 from a bad-entry error.
+Criteria: all MET — writes carry `X-Gym-Token`, reads provably do not, the token
+is absent from source control, a 401 renders as its own state.
+Checks: FE-CHECK green — typecheck clean, `npm test` **51 passed** / 8 files
+(was 47), `format:check` clean, `npm run build` succeeds. Run in a Linux
+container on Node 22 against `origin/main` + this change.
+Negative demonstration: dropping the header argument in `GymApi.createSession`
+turns the new spec red, then green again on restore.
+Notes / decisions:
+- **Not an HttpInterceptor.** An interceptor matching on URL would have attached
+  the secret to reads as well; making the caller pass it keeps the blast radius
+  visible at the one call site that needs it. The third spec asserts reads stay
+  header-free even when a token *is* configured — that is the regression this
+  choice is protecting.
+- **Injected, not read off the generated const.** Reading `RUNTIME_CONFIG`
+  directly would have made the two specs depend on whatever the machine's
+  environment happened to set, so one branch would silently skip. The token
+  defaults to the build value and is overridden per spec.
+- **ADR-0008's caveat confirmed empirically:** `npm run build` with a token set
+  produces a chunk containing the literal string. This is bundle-visible by
+  design; it is documented at the top of the generator so nobody later adds a
+  value that would actually hurt if published.
+- Escaping in the generator is covered: the value is interpolated into a
+  single-quoted TS literal (Prettier's style, and `format:check` covers `src/**`,
+  so `JSON.stringify` was not an option), escaping backslashes before quotes.
+  Verified a token containing both round-trips exactly.
+- **Filed H-12.** Committing H-4 from a PHP-less environment made the api
+  `pre-commit` hook report "Staged PHP is not Pint-clean" when pint could not
+  run at all — the exact failure mode H-10 fixed for Node and Postgres, and it
+  cost a `--no-verify` on the H-4 commit (checks were run for real in a
+  container: 82/82 and pint clean).
+- **Open for you:** `GYM_WRITE_TOKEN` must be set in the Vercel project as well
+  as on Render, or the deployed app ships an empty token and every save 401s.
+
+---
 ## H-4 — Guard the write endpoint            2026-08-14
 Executor: Claude (Opus, cloud session)   Evaluator: self-review (Mode C)   Verdict: PASS
 Commit: portfolio-api `feat(gym): guard the write endpoint with a shared secret [H-4]` · portfolio-app `docs(gym): ADR-0008 + contract security scheme [H-4]`

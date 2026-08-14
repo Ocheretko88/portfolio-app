@@ -160,7 +160,7 @@ Not verifiable from the audit sandbox — open items for you:
 - **Evaluator focus:** design-system coherence, accessible chart, no hard-coded numbers.
 - **Data-source note (2026-07-31):** `/gym/stats/overview` has no time series (only point-in-time aggregates) — a real per-day/per-exercise series doesn't exist until P2-1/P2-5, both gated behind P1-9. Rather than expand this step to add a backend endpoint, the trend chart plots the already-fetched recent sessions (`GymStore.loadSessions`, P1-3/P1-7): each point is one real session's own `SUM(reps * weightGrams)`, no aggregation across sessions in JS. Documented in `dashboard.ts`; superseded once P2-1/P2-5 land — P2-2 should retarget the chart primitives at the real series then, not before.
 
-### P1-9 · Slice DoD gate — `BLOCKED` (P1-6..8, H-1..H-5, H-4a)
+### P1-9 · Slice DoD gate — `BLOCKED` (P1-6..8, H-1..H-5)
 - **Scope:** end-to-end pass on `/gym`; a11y audit; README/roadmap tick.
 - **Acceptance:** full flow (log → history → dashboard) works on a fresh DB+seed; all checks green; STEP-LOG updated.
 - **Added 2026-07-28 — the gate is not passable until the deployment is real:**
@@ -211,12 +211,21 @@ Not verifiable from the audit sandbox — open items for you:
 - **Built 2026-08-14:** `EnsureGymWriteToken` (alias `gym.write`, `hash_equals`, fails closed) + `throttle:gym-write` (10/min) on the POST route; `config/gym.php` ← `GYM_WRITE_TOKEN`; `.env.example` + `render.yaml` (`sync:false`); 401 reuses `AuthenticationException` in the existing envelope; contract gains a `gymWriteToken` security scheme + `401`; ADR-0008 records the guard **and** the bigint-vs-UUID decision. `php artisan test` 82/82 (was 77), `pint --test` passed, `api:types` clean (one intended line). Guard demonstrated to fail: removing the middleware turns 3 of the 5 new tests red.
 - **Scope kept as written:** the guard is backend-only. The Angular client does **not** yet send the header, so `/gym/log` will 401 against a configured API until **H-4a** lands — deliberately a separate step rather than silent scope creep.
 
-### H-4a · Client sends the write token — `READY` (H-4)
+### H-4a · Client sends the write token — `DONE`
 - **Scope:** `portfolio-app`: `src/environments/environment*.ts` (or a generated env shim beside `scripts/generate-version.mjs`), `core/api/api-client.ts` or a small `HttpInterceptor`, `core/api/gym-api.ts`, `log-form.spec.ts`; Vercel env var.
 - **Problem:** H-4 closed the endpoint; the UI has no way through it. `POST /gym/sessions` from `/gym/log` now returns 401.
 - **Goal:** attach `X-Gym-Token` to mutating gym requests only — reads must not carry it. The value comes from the build environment, not a committed constant (`environment.ts` is committed; `generate-version.mjs` is the existing precedent for writing a generated file at build time).
 - **Acceptance:** logging a workout succeeds against a token-configured API; a GET carries no token header (assert it); a 401 renders a distinguishable error state, not "saved"; token absent from source control; set in Vercel; spec covers both header-present and 401 paths; FE-CHECK.
 - **Evaluator focus:** the token is not hard-coded in a committed file; reads stay header-free; ADR-0008's "bundle-visible, anti-drive-by not authentication" caveat is repeated wherever the value is configured.
+- **Built 2026-08-14:** `scripts/generate-runtime-config.mjs` mirrors `generate-version.mjs` exactly — writes a git-ignored `src/environments/runtime-config.ts` from `GYM_WRITE_TOKEN` on postinstall/prestart/prebuild. `GymApi` injects the value through a `GYM_WRITE_TOKEN` InjectionToken (so both the configured and unconfigured branch are testable regardless of the local env) and passes it as an opt-in header argument to `ApiClient.post` — deliberately **not** an interceptor, which would have matched reads too. The log form now tells a 401 apart from a validation failure. FE-CHECK green: typecheck clean, **51 tests** (was 47), format:check clean, `npm run build` succeeds. Removing the header wiring turns the new spec red.
+- **Still yours to do:** set `GYM_WRITE_TOKEN` in the Vercel project (same value as Render) — the build reads it from the environment, and an unset token ships an empty string, which 401s loudly by design.
+
+### H-12 · The api pre-commit hook misreports a missing PHP — `READY` (no deps)
+- **Scope:** `portfolio-api/.githooks/pre-commit` (and audit `pre-push` for the same shape).
+- **Problem:** committing H-4 from an environment without PHP produced `✖ Staged PHP is not Pint-clean.` — the check could not run at all, and said the code was dirty. This is precisely the failure H-10 fixed for Node and Postgres on `pre-push`, and the same class of bug: "a check that cannot run is not a check that failed, and reporting the two the same way is exactly what teaches people to reach for `--no-verify`." It taught exactly that, once, already.
+- **Goal:** `ensure_php` in `_lib.sh` alongside `ensure_node`; the pre-commit pint step reports a missing PHP/`vendor/bin/pint` as an environment problem, naming the fix, distinct from a lint failure.
+- **Acceptance:** with PHP off `PATH`, the hook says so and names the fix; with PHP present and a real style violation, it still blocks; `pre-push` audited for the same gap.
+- **Evaluator focus:** the environment message and the failure message cannot be confused; the hook still fails closed on a real violation.
 
 ### H-5 · Session edit + delete — `READY` (H-4)
 - **Scope:** `portfolio-api` controller/service/repo/request for `PATCH /gym/sessions/{id}` + `DELETE /gym/sessions/{id}`; `docs/openapi.yaml`; regenerate app types.

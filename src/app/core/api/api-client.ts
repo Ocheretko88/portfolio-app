@@ -28,8 +28,17 @@ export class ApiClient {
     return this.http.get<Envelope<T>>(this.url(path)).pipe(map((res) => res.data));
   }
 
-  post<T>(path: string, body: unknown): Observable<T> {
-    return this.http.post<Envelope<T>>(this.url(path), body).pipe(map((res) => res.data));
+  /**
+   * `headers` is opt-in per call rather than a global interceptor on purpose:
+   * only the mutating gym routes need the `X-Gym-Token` shared secret
+   * (ADR-0008), and an interceptor that matched on URL would quietly attach it
+   * to reads too. Making the caller ask keeps the blast radius visible at the
+   * call site — see `GymApi.createSession`.
+   */
+  post<T>(path: string, body: unknown, headers?: Record<string, string>): Observable<T> {
+    return this.http
+      .post<Envelope<T>>(this.url(path), body, headers ? { headers } : {})
+      .pipe(map((res) => res.data));
   }
 
   /**

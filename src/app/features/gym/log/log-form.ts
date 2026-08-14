@@ -256,9 +256,18 @@ export class GymLogForm {
           this.submittedCount.update((count) => count + 1);
           this.resetForm();
         },
-        error: () => {
+        error: (err: unknown) => {
           this.submitting.set(false);
-          this.submitError.set('Could not save this session — check your entries and try again.');
+          // 401 means the build is missing GYM_WRITE_TOKEN (ADR-0008/H-4a) —
+          // a deployment problem, not a data problem. Telling the athlete to
+          // "check your entries" would send them re-typing a correct form
+          // forever, so the two cases read differently.
+          const status = (err as { status?: number } | null)?.status;
+          this.submitError.set(
+            status === 401
+              ? 'This app is not authorised to save workouts. The gym write token is missing from this build — nothing you typed is wrong.'
+              : 'Could not save this session — check your entries and try again.',
+          );
         },
       });
   }

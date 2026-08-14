@@ -46,5 +46,10 @@ Thumbs.db
 # Auto-generated build version stamp (regenerated on install/serve/build)
 /src/environments/version.ts
 
+# Auto-generated build-environment config (regenerated on install/serve/build).
+# Carries GYM_WRITE_TOKEN — bundle-visible by design (ADR-0008), but there is no
+# reason to also put it in git history.
+/src/environments/runtime-config.ts
+
 # personal training data — kept local, not committed
 docs/build/fixtures/

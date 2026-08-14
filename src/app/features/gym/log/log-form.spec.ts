@@ -211,6 +211,35 @@ describe('GymLogForm', () => {
     expect(component['submitError']()).toContain('Could not save');
   });
 
+  it('distinguishes a 401 (missing write token) from a bad-entry error', () => {
+    // H-4a: the API guards writes with a shared secret (ADR-0008). If the build
+    // is missing it, every submission 401s no matter what the athlete types —
+    // so the message must not send them re-checking a correct form.
+    const fixture = TestBed.createComponent(GymLogForm);
+    fixture.detectChanges();
+    flushCatalog();
+    const component = fixture.componentInstance;
+
+    component['setGroup'](0).patchValue({ exerciseId: 1, weight: 20, reps: 5 });
+    component['submit']();
+
+    httpMock
+      .expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/v1/gym/sessions'))
+      .flush(
+        {
+          error: {
+            code: 'AuthenticationException',
+            message: 'A valid X-Gym-Token header is required for this request.',
+          },
+        },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+
+    const message = component['submitError']();
+    expect(message).toContain('not authorised');
+    expect(message).not.toContain('check your entries');
+  });
+
   it('renders the exercise catalog as selectable options (nothing typed to submit)', () => {
     const fixture = TestBed.createComponent(GymLogForm);
     fixture.detectChanges();

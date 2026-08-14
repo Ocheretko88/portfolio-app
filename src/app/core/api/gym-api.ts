@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { InjectionToken, Injectable, inject } from '@angular/core';
 import { type Observable, map } from 'rxjs';
+import { RUNTIME_CONFIG } from '../../../environments/runtime-config';
 import { ApiClient } from './api-client';
 import type {
   CreateSessionRequestDto,
@@ -10,6 +11,23 @@ import type {
   StatsOverviewDto,
   WorkoutSessionDto,
 } from './api-types';
+
+/**
+ * Header carrying the shared secret for mutating /gym routes (ADR-0008).
+ * Exported so specs assert on the name rather than a duplicated string.
+ */
+export const GYM_WRITE_TOKEN_HEADER = 'X-Gym-Token';
+
+/**
+ * The shared secret itself, injected rather than read straight off
+ * `RUNTIME_CONFIG` so a spec can exercise both the configured and the
+ * unconfigured branch without depending on what the local build environment
+ * happened to set. Defaults to the build-time value.
+ */
+export const GYM_WRITE_TOKEN = new InjectionToken<string>('GYM_WRITE_TOKEN', {
+  providedIn: 'root',
+  factory: () => RUNTIME_CONFIG.gymWriteToken,
+});
 
 /** Shape of the gym module health ping (scaffold). */
 export interface GymPing {
@@ -54,6 +72,7 @@ function toQueryString<T extends object>(params: T): string {
 @Injectable({ providedIn: 'root' })
 export class GymApi {
   private readonly api = inject(ApiClient);
+  private readonly writeToken = inject(GYM_WRITE_TOKEN);
 
   ping(): Observable<GymPing> {
     return this.api.get<GymPing>('/api/v1/gym/ping');
@@ -89,8 +108,19 @@ export class GymApi {
   /**
    * Logs a workout session with its set entries (P1-6). Returns the created
    * session with server-computed PR flags — never client-supplied.
+   *
+   * Carries the `X-Gym-Token` shared secret the API requires on mutating /gym
+   * routes (ADR-0008). Reads above deliberately send no such header. The value
+   * comes from the build environment via the generated `runtime-config` (see
+   * `scripts/generate-runtime-config.mjs`); when it is unset the header is
+   * omitted entirely and the API answers 401, which is the intended loud
+   * failure rather than a silent no-op.
    */
   createSession(payload: CreateSessionRequestDto): Observable<WorkoutSessionDto> {
-    return this.api.post<WorkoutSessionDto>('/api/v1/gym/sessions', payload);
+    return this.api.post<WorkoutSessionDto>(
+      '/api/v1/gym/sessions',
+      payload,
+      this.writeToken ? { [GYM_WRITE_TOKEN_HEADER]: this.writeToken } : undefined,
+    );
   }
 }
