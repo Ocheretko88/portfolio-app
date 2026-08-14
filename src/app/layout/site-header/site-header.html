@@ -68,13 +68,13 @@
           <a routerLink="/" [fragment]="item.fragment" (click)="closeMenu()">{{ item.label }}</a>
         </li>
       }
-      @for (item of routeItems; track item.route) {
-        <li>
-          <a [routerLink]="item.route" (click)="closeMenu()">
-            <i [class]="item.icon" aria-hidden="true"></i> {{ item.label }}
-          </a>
-        </li>
-      }
+<!--      @for (item of routeItems; track item.route) {-->
+<!--        <li>-->
+<!--          <a [routerLink]="item.route" (click)="closeMenu()">-->
+<!--            <i [class]="item.icon" aria-hidden="true"></i> {{ item.label }}-->
+<!--          </a>-->
+<!--        </li>-->
+<!--      }-->
     </ul>
   </nav>
 </header>
