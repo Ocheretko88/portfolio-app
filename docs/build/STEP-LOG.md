@@ -17,6 +17,44 @@ Notes / decisions: <new abstraction justification, ADR ref, follow-ups>
 ```
 
 ---
+## H-4 — Guard the write endpoint            2026-08-14
+Executor: Claude (Opus, cloud session)   Evaluator: self-review (Mode C)   Verdict: PASS
+Commit: portfolio-api `feat(gym): guard the write endpoint with a shared secret [H-4]` · portfolio-app `docs(gym): ADR-0008 + contract security scheme [H-4]`
+What changed: `EnsureGymWriteToken` middleware (alias `gym.write`) on
+`POST /api/v1/gym/sessions` — `X-Gym-Token` compared with `hash_equals` against
+`config('gym.write_token')` (env `GYM_WRITE_TOKEN`), plus a dedicated
+`throttle:gym-write` limiter at 10/min. Reads untouched. Secret wired through
+`config/gym.php`, `.env.example`, `render.yaml` (`sync: false`) and `phpunit.xml`.
+Contract gains a `gymWriteToken` security scheme and a `401` on the POST;
+`contract.ts` regenerated. ADR-0008 records the guard and the bigint-vs-UUID id
+decision.
+Criteria: all MET — 401 (missing), 401 (wrong), 201 (correct), reads unaffected,
+guard fails closed on an unset secret; error envelope reused as
+`AuthenticationException`, not reinvented; no secret in git.
+Checks: BE-CHECK green — `php artisan test` **82 passed** / 424 assertions (was
+77; +5 new), `./vendor/bin/pint --test` passed. Run against a real Postgres 16 in
+a Linux container at HEAD `815f148` with the change applied. `npm run api:types`
+leaves exactly one intended line (`401: components['responses']['Error']`);
+`npm run format:check` clean.
+Negative demonstration: removing `'gym.write'` from the route group turns 3 of
+the 5 new tests red (201 where 401 expected), then green again on restore — the
+gate can fail, per H-3's standard.
+Notes / decisions:
+- **The guard is anti-drive-by, not authentication.** The client must ship the
+  secret in its bundle, so it stops strangers with the URL, not a determined
+  reader. ADR-0008 says so explicitly rather than overselling it; real auth is
+  the Phase-3/4 conversation and this middleware is the seam it replaces.
+- Deliberately shaped like the planned Phase-3 `ResolveShareLink` so that work
+  slots in beside it.
+- **Scope held to the backend.** The Angular client does not send the header yet,
+  so `/gym/log` will 401 against a configured API. Filed as **H-4a** (READY) and
+  added to the P1-9 gate rather than widened into this step.
+- Environment note, not a code problem: `portfolio-app/node_modules` is missing
+  `axe-core` (added as a dev-dep by H-3), so `npm run typecheck` fails on
+  `src/testing/a11y.ts` until `npm install` is run to completion. Unrelated to
+  this step; the app-side change here is docs + generated types only.
+
+---
 ## H-3 — Real a11y assertions, not manual review            2026-07-31
 Executor: Claude (Sonnet, cloud session)   Evaluator: Claude (Opus subagent)   Verdict: PASS
 Commit: feat(gym): add axe a11y assertions to gym specs [H-3]

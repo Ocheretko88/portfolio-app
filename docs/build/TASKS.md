@@ -160,7 +160,7 @@ Not verifiable from the audit sandbox — open items for you:
 - **Evaluator focus:** design-system coherence, accessible chart, no hard-coded numbers.
 - **Data-source note (2026-07-31):** `/gym/stats/overview` has no time series (only point-in-time aggregates) — a real per-day/per-exercise series doesn't exist until P2-1/P2-5, both gated behind P1-9. Rather than expand this step to add a backend endpoint, the trend chart plots the already-fetched recent sessions (`GymStore.loadSessions`, P1-3/P1-7): each point is one real session's own `SUM(reps * weightGrams)`, no aggregation across sessions in JS. Documented in `dashboard.ts`; superseded once P2-1/P2-5 land — P2-2 should retarget the chart primitives at the real series then, not before.
 
-### P1-9 · Slice DoD gate — `BLOCKED` (P1-6..8, H-1..H-5)
+### P1-9 · Slice DoD gate — `BLOCKED` (P1-6..8, H-1..H-5, H-4a)
 - **Scope:** end-to-end pass on `/gym`; a11y audit; README/roadmap tick.
 - **Acceptance:** full flow (log → history → dashboard) works on a fresh DB+seed; all checks green; STEP-LOG updated.
 - **Added 2026-07-28 — the gate is not passable until the deployment is real:**
@@ -168,6 +168,7 @@ Not verifiable from the audit sandbox — open items for you:
   - The **deployed** Render API answers `GET /api/v1/gym/exercises` and `/gym/stats/overview` with the envelope (not 404/500), and `POST /gym/sessions` persists to Neon.
   - The Vercel build serves `/gym` and `/gym/log` against that API (CORS to the Vercel origin verified, per the Phase-0 note).
   - CI is green on `main` in **both** repos.
+  - `GYM_WRITE_TOKEN` is set on Render **and** in the Vercel build (H-4/H-4a), and a real log-a-workout round trip through the deployed stack persists to Neon.
 - **Evaluator focus:** the slice is genuinely end-to-end and genuinely deployed, not mocked and not localhost-only.
 
 ---
@@ -201,12 +202,21 @@ Not verifiable from the audit sandbox — open items for you:
 - **Acceptance:** helper exists and is used by ≥2 specs; a deliberately broken label makes a test **fail** (demonstrate it, then revert); `npm test` green; runs in CI.
 - **Verify:** `FE-CHECK` · **Evaluator focus:** violations actually fail the suite; the helper covers both themes if feasible.
 
-### H-4 · Guard the write endpoint — `READY` (no deps)
+### H-4 · Guard the write endpoint — `DONE`
 - **Scope:** `portfolio-api`: `routes/api.php`, a small middleware, `config/`, `.env.example`, `render.yaml`, tests; ADR in `portfolio-app/docs/adr/`.
 - **Problem:** `POST /api/v1/gym/sessions` is currently open to anyone who finds the URL, under the default `throttle:api` only. Spec §9 knowingly accepts *read* obscurity for a personal MVP — it never accepted anonymous **writes**, and a public write endpoint is the one thing a senior reviewer will flag on sight. (Related, lower stakes: session IDs are sequential bigints, not the spec's UUIDs, so records are enumerable — decide and record, don't drift.)
 - **Goal:** a shared-secret header check (`X-Gym-Token`, env-configured) on the mutating routes + a dedicated tighter throttle; reads stay open. Deliberately the same shape as the Phase-3 `ResolveShareLink` middleware so that work slots in rather than replaces this.
 - **Acceptance:** POST without/with a wrong token → 401 in the standard error envelope; with the token → 201; reads unaffected; feature test covers all three; secret only via env (`sync:false`); ADR records both the write-guard decision **and** the bigint-vs-UUID id choice.
 - **Verify:** `BE-CHECK` · **Evaluator focus:** no secret committed; middleware is thin; error envelope reused, not reinvented.
+- **Built 2026-08-14:** `EnsureGymWriteToken` (alias `gym.write`, `hash_equals`, fails closed) + `throttle:gym-write` (10/min) on the POST route; `config/gym.php` ← `GYM_WRITE_TOKEN`; `.env.example` + `render.yaml` (`sync:false`); 401 reuses `AuthenticationException` in the existing envelope; contract gains a `gymWriteToken` security scheme + `401`; ADR-0008 records the guard **and** the bigint-vs-UUID decision. `php artisan test` 82/82 (was 77), `pint --test` passed, `api:types` clean (one intended line). Guard demonstrated to fail: removing the middleware turns 3 of the 5 new tests red.
+- **Scope kept as written:** the guard is backend-only. The Angular client does **not** yet send the header, so `/gym/log` will 401 against a configured API until **H-4a** lands — deliberately a separate step rather than silent scope creep.
+
+### H-4a · Client sends the write token — `READY` (H-4)
+- **Scope:** `portfolio-app`: `src/environments/environment*.ts` (or a generated env shim beside `scripts/generate-version.mjs`), `core/api/api-client.ts` or a small `HttpInterceptor`, `core/api/gym-api.ts`, `log-form.spec.ts`; Vercel env var.
+- **Problem:** H-4 closed the endpoint; the UI has no way through it. `POST /gym/sessions` from `/gym/log` now returns 401.
+- **Goal:** attach `X-Gym-Token` to mutating gym requests only — reads must not carry it. The value comes from the build environment, not a committed constant (`environment.ts` is committed; `generate-version.mjs` is the existing precedent for writing a generated file at build time).
+- **Acceptance:** logging a workout succeeds against a token-configured API; a GET carries no token header (assert it); a 401 renders a distinguishable error state, not "saved"; token absent from source control; set in Vercel; spec covers both header-present and 401 paths; FE-CHECK.
+- **Evaluator focus:** the token is not hard-coded in a committed file; reads stay header-free; ADR-0008's "bundle-visible, anti-drive-by not authentication" caveat is repeated wherever the value is configured.
 
 ### H-5 · Session edit + delete — `READY` (H-4)
 - **Scope:** `portfolio-api` controller/service/repo/request for `PATCH /gym/sessions/{id}` + `DELETE /gym/sessions/{id}`; `docs/openapi.yaml`; regenerate app types.
@@ -347,5 +357,5 @@ than one step).
 - **"Same as last workout"** (spec §6.1) — deferred out of P1-6 because it needs history data; schedule right after P1-7.
 - **Exercise search is not a real combobox** (P1-6 note) — the search input filters the `<select>`'s options without ARIA binding. Revisit in P2-8 polish.
 - **`session notes` sits after the action buttons in tab order** (P1-6 note) — fix during P1-7 or P2-8.
-- **Sequential bigint IDs vs the spec's UUIDs** — decided/recorded in H-4; revisit if share links ever expose session IDs (Phase 3).
+- **Sequential bigint IDs vs the spec's UUIDs** — decided in **ADR-0008**: keep bigints; the unguessable value is `share_links.token`. Revisit only if a share link ever exposes a session ID (Phase 3).
 - **No API pagination cap audit** — `perPage` bounds are validated, but confirm the list endpoint can't be asked for an unbounded page once real data exists.

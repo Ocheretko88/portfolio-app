@@ -183,6 +183,8 @@ paths:
       operationId: createGymSession
       summary: Log a workout session with its set entries
       tags: [gym]
+      security:
+        - gymWriteToken: []
       requestBody:
         required: true
         content:
@@ -199,6 +201,7 @@ paths:
                 properties:
                   data: { $ref: '#/components/schemas/WorkoutSession' }
                   meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
 
   /api/v1/gym/sessions/{id}:
@@ -242,6 +245,16 @@ paths:
                   meta: { $ref: '#/components/schemas/Meta' }
 
 components:
+  securitySchemes:
+    gymWriteToken:
+      type: apiKey
+      in: header
+      name: X-Gym-Token
+      description: >-
+        Shared secret required on mutating /gym routes (ADR-0008). Reads are
+        open. A missing or wrong value returns 401 in the standard error
+        envelope.
+
   responses:
     Error:
       description: Error envelope
